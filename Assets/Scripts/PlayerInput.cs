@@ -5,7 +5,8 @@ using System.Collections;
 public class PlayerInput : MonoBehaviour
 {
     public string playerNumber = "1";
-    public float jumpHeight = 4;
+    public float maxJumpHeight = 4;
+    public float minJumpHeight = 1;
     public float timeToJumpApex = 0.4f;
     public float accelerationTimeAirborne = .2f;
     public float accelerationTimeGrounded = .1f;
@@ -17,7 +18,8 @@ public class PlayerInput : MonoBehaviour
     float timeToWallUnstick;
 
     private float gravity;
-    private float jumpVelocity;
+    private float maxJumpVelocity;
+    private float minJumpVelocity;
     private float moveSpeed = 6;
 
     private Vector3 velocity;
@@ -29,13 +31,15 @@ public class PlayerInput : MonoBehaviour
     void Start()
     {
         controller = GetComponent<PlayerController>();
-        gravity = -(2 * jumpHeight) / Mathf.Pow(timeToJumpApex, 2);
-        jumpVelocity = Mathf.Abs(gravity * timeToJumpApex);
-        print("Gravity: " + gravity + " JumpVel: " + jumpVelocity);
+        gravity = -(2 * maxJumpHeight) / Mathf.Pow(timeToJumpApex, 2);
+        maxJumpVelocity = Mathf.Abs(gravity * timeToJumpApex);
+        minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
+        print("Gravity: " + gravity + " JumpVel: " + maxJumpVelocity);
     }
 
     void Update()
     {
+        // Move input
         Vector2 input = new Vector2(Input.GetAxisRaw("L_XAxis_" + playerNumber), Input.GetAxisRaw("L_YAxis_" + playerNumber));
         int wallDirX = controller.collisions.left ? -1 : 1;
 
@@ -76,6 +80,7 @@ public class PlayerInput : MonoBehaviour
         {
             velocity.y = 0.0f;
         }
+        // Jump input
         if (Input.GetButtonDown("A_" + playerNumber))
         {
             if (wallSliding)
@@ -100,12 +105,19 @@ public class PlayerInput : MonoBehaviour
             }
             if (controller.collisions.below)
             {
-                velocity.y = jumpVelocity;
+                velocity.y = maxJumpVelocity;
+            }
+        }
+        if (Input.GetButtonUp("A_" + playerNumber))
+        {
+            if(velocity.y > minJumpVelocity)
+            {
+                velocity.y = minJumpVelocity;
             }
         }
 
         velocity.y += gravity * Time.deltaTime;
 
-        controller.Move(velocity * Time.deltaTime);
+        controller.Move(velocity * Time.deltaTime, input);
     }
 }
