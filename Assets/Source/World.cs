@@ -1,15 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class WorldClass : MonoBehaviour {
+public class World
+{
+    private string worldName;
+    private int seed;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    public World(string worldName, int seed)
+    {
+        this.worldName = worldName;
+        this.seed = seed;
+
+        SetupWorld();
+    }
+
+    private void SetupWorld()
+    {
+
+    }
 }
