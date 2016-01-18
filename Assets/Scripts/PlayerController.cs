@@ -5,8 +5,8 @@ using System;
 public class PlayerController : RaycastController
 {
     public CollisionInfo collisions;
-
-    Vector2 playerInput;
+    [HideInInspector]
+    public Vector2 playerInput;
 
     private float maxClimbAngle = 80.0f;
     private float maxDescendAngle = 75.0f;
@@ -135,10 +135,19 @@ public class PlayerController : RaycastController
                 {
                     if (directionY == 1 || hit.distance == 0)
                     {
+                        print("Moved thru the platform going up");
                         continue;
                     }
+                    if(collisions.fallingThroughtPlatform)
+                    {
+                        continue;
+                    }
+
                     if(Mathf.Sign(playerInput.y) == -1)
                     {
+                        print("Pressed down and falled thru the platform");
+                        collisions.fallingThroughtPlatform = true;
+                        Invoke("ResetFallingThroughtPlatform", 0.5f);
                         continue;
                     }
                 }
@@ -218,6 +227,11 @@ public class PlayerController : RaycastController
         }
     }
 
+    void ResetFallingThroughtPlatform()
+    {
+        collisions.fallingThroughtPlatform = false;
+    }
+
     public struct CollisionInfo
     {
         public bool above, below;
@@ -229,6 +243,7 @@ public class PlayerController : RaycastController
         public bool descendingSlope;
         public Vector3 velocityOld;
         public int faceDir;
+        public bool fallingThroughtPlatform;
 
         public void Reset()
         {

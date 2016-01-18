@@ -44,7 +44,11 @@ public class PlayerInput : MonoBehaviour
         int wallDirX = controller.collisions.left ? -1 : 1;
 
         float targetVelocity = input.x * moveSpeed;
-        velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocity, ref velocityXSmoothing, controller.collisions.below ? accelerationTimeGrounded : accelerationTimeAirborne);
+        velocity.x = Mathf.SmoothDamp(
+            velocity.x, 
+            targetVelocity, 
+            ref velocityXSmoothing, 
+            controller.collisions.below ? accelerationTimeGrounded : accelerationTimeAirborne);
 
         bool wallSliding = false;
         if ((controller.collisions.left || controller.collisions.right) && !controller.collisions.below && velocity.y < 0)
@@ -76,10 +80,6 @@ public class PlayerInput : MonoBehaviour
             }
         }
 
-        if (controller.collisions.above || controller.collisions.below)
-        {
-            velocity.y = 0.0f;
-        }
         // Jump input
         if (Input.GetButtonDown("A_" + playerNumber))
         {
@@ -119,5 +119,10 @@ public class PlayerInput : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
 
         controller.Move(velocity * Time.deltaTime, input);
+
+        if (controller.collisions.above || controller.collisions.below)
+        {
+            velocity.y = 0.0f;
+        }
     }
 }
