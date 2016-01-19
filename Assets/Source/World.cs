@@ -9,7 +9,8 @@ public class World
     private int seed;
     private Thread worldThread;
     private bool worldThreadRunning = false;
-    private List<Chunk> _Chunks = new List<Chunk>();
+    private List<Chunk> _chunks = new List<Chunk>();
+
     public World(string worldName, int seed)
     {
         this.worldName = worldName;
@@ -31,9 +32,9 @@ public class World
         {
             try
             {
-                if(_Chunks.Count < 1)
+                if (_chunks.Count < 1)
                 {
-                    _Chunks.Add(new Chunk(new Int2nd(0, 0), this));
+                    _chunks.Add(new Chunk(new Int2nd(0, 0), this));
                 }
             }
             catch (System.Exception e)

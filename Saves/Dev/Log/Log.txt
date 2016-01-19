@@ -1,4 +1,19 @@
+Resources/Textures/Block/fire_layer_0.png texture size greater than supported
+Resources/Textures/Block/fire_layer_1.png texture size greater than supported
+Resources/Textures/Block/lava_flow.png texture size greater than supported
+Resources/Textures/Block/lava_still.png texture size greater than supported
+Resources/Textures/Block/portal.png texture size greater than supported
+Resources/Textures/Block/prismarine_rough.png texture size greater than supported
+Resources/Textures/Block/sea_lantern.png texture size greater than supported
+Resources/Textures/Block/water_flow.png texture size greater than supported
+Resources/Textures/Block/water_still.png texture size greater than supported
 WorldManager Initialized
 World Initialized
-Has used _Draw() function
+Registered Blocks:
+ID:0,Name:Air
+ID:1,Name:Stone
+ID:2,Name:Dirt
+ID:3,Name:Sand
+  at (wrapper managed-to-native) UnityEngine.Time:get_time ()
+  at Chunk.Generate () [0x00015] in E:\Projetos\Projeto Nati\Assets\Source\Chunk\Chunk.cs:39 
 Worldthread succesfully closed

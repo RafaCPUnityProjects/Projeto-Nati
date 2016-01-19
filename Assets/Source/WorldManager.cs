@@ -7,9 +7,9 @@ using System;
 public class WorldManager : MonoBehaviour
 {
 
-    private static WorldManager _Instance;
+    private static WorldManager _instance;
     private World _world;
-    private List<Delegate> _Rundels = new List<Delegate>();
+    private List<Delegate> _rundels = new List<Delegate>();
 
     void Start()
     {
@@ -17,14 +17,22 @@ public class WorldManager : MonoBehaviour
         FileManager.SetupFileManager(worldName);
         Logger.Log("WorldManager Initialized");
 
-        _Instance = this;
+        _instance = this;
         _world = new World(worldName, worldName.GetHashCode());
         Logger.Log("World Initialized");
+        Block.stone.GetBlockID();
+        BlockRegistry.PrintAllBlocks();
+    }
+
+    void Update()
+    {
+        RunAllDelegates();
+        Logger.WriteLog();
     }
 
     public void RegisterDelegate(Delegate d)
     {
-        _Rundels.Add(d);
+        _rundels.Add(d);
     }
 
     public World GetWorld()
@@ -32,17 +40,12 @@ public class WorldManager : MonoBehaviour
         return _world;
     }
 
-    void Update()
-    {
-        RunAllDelegates();
-    }
-
     void RunAllDelegates()
     {
         List<Delegate> rundelCopy = null;
-        lock (_Rundels)
+        lock (_rundels)
         {
-            rundelCopy = new List<Delegate>(_Rundels);
+            rundelCopy = new List<Delegate>(_rundels);
         }
         foreach (Delegate d in rundelCopy)
         {
@@ -59,7 +62,7 @@ public class WorldManager : MonoBehaviour
                     Debug.Log(e.StackTrace);
                 }
 
-                _Rundels.Remove(d);
+                _rundels.Remove(d);
             }
         }
     }
@@ -75,6 +78,6 @@ public class WorldManager : MonoBehaviour
 
     public static WorldManager GetInstance()
     {
-        return _Instance;
+        return _instance;
     }
 }

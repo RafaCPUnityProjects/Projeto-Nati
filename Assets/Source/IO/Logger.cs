@@ -4,20 +4,20 @@ using System.Collections.Generic;
 
 public class Logger
 {
-    private static List<string> _Log = new List<string>();
+    private static List<string> _log = new List<string>();
 
     public static void Log(string _ToLog)
     {
-        _Log.Add(_ToLog);
+        _log.Add(_ToLog);
     }
     public static void WriteLog()
     {
-        if(_Log.Count > 0)
+        if(_log.Count > 0)
         {
-            foreach(string s in new List<string>(_Log))
+            foreach(string s in new List<string>(_log))
             {
                 AppendLog(s);
-                _Log.Remove(s);
+                _log.Remove(s);
             }
         }
     }

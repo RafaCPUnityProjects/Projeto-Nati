@@ -5,13 +5,14 @@ using System;
 
 public class FileManager
 {
-    public static readonly string SaveDir = "Saves/";
+    public static readonly string saveDir = "Saves/";
+    public static readonly string blockTexturesDir = "Resources/Textures/Block/";
     private static string loggerPath;
 
     public static void SetupFileManager(string worldName)
     {
-        CheckCreateDirectory(SaveDir + worldName + "/Log/");
-        loggerPath = SaveDir + worldName + "/Log/Log.txt";
+        CheckCreateDirectory(saveDir + worldName + "/Log/");
+        loggerPath = saveDir + worldName + "/Log/Log.txt";
         File.WriteAllText(loggerPath, "");
 
     }
