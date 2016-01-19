@@ -1,11 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
 
 public class World
 {
     private string worldName;
     private int seed;
-
+    private Thread worldThread;
+    private bool worldThreadRunning = false;
+    private List<Chunk> _Chunks = new List<Chunk>();
     public World(string worldName, int seed)
     {
         this.worldName = worldName;
@@ -16,6 +20,41 @@ public class World
 
     private void SetupWorld()
     {
+        worldThreadRunning = true;
+        worldThread = new Thread(Tick);
+        worldThread.Start();
+    }
 
+    private void Tick()
+    {
+        while (worldThreadRunning)
+        {
+            try
+            {
+                if(_Chunks.Count < 1)
+                {
+                    _Chunks.Add(new Chunk(new Int2nd(0, 0), this));
+                }
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log(e.StackTrace);
+            }
+        }
+    }
+
+    public void RequestWorldThreadStop()
+    {
+        worldThreadRunning = false;
+    }
+
+    public string GetWorldName()
+    {
+        return worldName;
+    }
+
+    public Thread GetWorldThread()
+    {
+        return worldThread;
     }
 }

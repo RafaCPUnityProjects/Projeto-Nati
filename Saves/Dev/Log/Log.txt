@@ -1,0 +1,4 @@
+WorldManager Initialized
+World Initialized
+Has used _Draw() function
+Worldthread succesfully closed
