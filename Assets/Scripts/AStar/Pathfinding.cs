@@ -38,14 +38,6 @@ public class Pathfinding : MonoBehaviour
         while(openSet.Count > 0)
         {
             Node currentNode = openSet.RemoveFirst();
-            //for (int i = 1; i < openSet.Count; i++)
-            //{
-            //    if(openSet[i].fCost < currentNode.fCost || (openSet[i].fCost == currentNode.fCost && openSet[i].hCost < currentNode.hCost))
-            //    {
-            //        currentNode = openSet[i];
-            //    }
-            //}
-            //openSet.Remove(currentNode);
             closedSet.Add(currentNode);
 
             if(currentNode == targetNode)
