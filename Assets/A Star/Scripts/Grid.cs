@@ -1,7 +1,9 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿/* 
+    This class populates the grid with nodes and terrain penalties
+*/
+
+using UnityEngine;
 using System.Collections.Generic;
-using System;
 
 public class Grid : MonoBehaviour
 {
@@ -9,7 +11,7 @@ public class Grid : MonoBehaviour
     public Vector2 gridWorldSize;
     public float nodeRadius;
     public bool displayGridGizmos = false;
-    public TerrainType[] walkableRegions;
+    public TerrainType[] walkableRegions; //at least one walkable region required
 
     Dictionary<int, int> walkableRegionsDictionary = new Dictionary<int, int>(); 
     LayerMask walkableMask;
@@ -21,18 +23,23 @@ public class Grid : MonoBehaviour
 
     void Awake()
     {
-        nodeDiameter = nodeRadius * 2;
+        if(walkableRegions.Length < 1)
+        {
+            Debug.LogError("At least one walkable region is required!");
+        }
+
+        nodeDiameter = nodeRadius * 2.0f;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
         foreach(TerrainType region in walkableRegions)
         {
-            walkableMask.value |= region.terrainMask.value;
+            walkableMask.value |= region.terrainMask.value; //adds each walkable region to the layermask
             walkableRegionsDictionary.Add((int)Mathf.Log(region.terrainMask.value, 2), region.terrainPenalty);
         }
         CreateGrid();
     }
 
-    public int MaxSize
+    public int MaxGridSize
     {
         get
         {
@@ -53,8 +60,8 @@ public class Grid : MonoBehaviour
                 bool walkable = !(Physics.CheckSphere(worldPoint, nodeRadius, unwalkableLayermask));
 
                 int movementPenalty = 0;
-                //raycast
-                if(walkable)
+
+                if (walkable)
                 {
                     Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
                     RaycastHit hit;
@@ -92,7 +99,7 @@ public class Grid : MonoBehaviour
         return neighbours;
     }
 
-    public Node NodeFromWorldPoint(Vector3 worldPosition)
+    public Node WorldPoint2Node(Vector3 worldPosition)
     {
         float percentX = (worldPosition.x + gridWorldSize.x / 2) / gridWorldSize.x;
         float percentY = (worldPosition.z + gridWorldSize.y / 2) / gridWorldSize.y;
@@ -104,6 +111,7 @@ public class Grid : MonoBehaviour
         return grid[x, y];
     }
 
+#if UNITY_EDITOR
     void OnDrawGizmos()
     {
         Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 2, gridWorldSize.y));
@@ -117,7 +125,9 @@ public class Grid : MonoBehaviour
             }
         }
     }
+#endif
 
+    //Used to define penalties for multiple types of terrain
     [System.Serializable]
     public class TerrainType
     {

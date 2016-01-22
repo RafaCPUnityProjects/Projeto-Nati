@@ -1,5 +1,8 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿/*
+    Responsible for processing the path requests
+*/
+
+using UnityEngine;
 using System.Collections.Generic;
 using System;
 
@@ -19,6 +22,7 @@ public class PathRequestManager : MonoBehaviour
         pathFinding = GetComponent<Pathfinding>();
     }
 
+    //Static method called for a path between 2 world points
     public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Vector3[], bool> callBack)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, callBack);

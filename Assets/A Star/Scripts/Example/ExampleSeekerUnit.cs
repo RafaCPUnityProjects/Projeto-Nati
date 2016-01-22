@@ -1,8 +1,11 @@
-﻿using UnityEngine;
-using System.Collections;
-using System;
+﻿/*
+Example class using the A* algorithm to track target position
+*/
 
-public class Unit : MonoBehaviour
+using UnityEngine;
+using System.Collections;
+
+public class ExampleSeekerUnit : MonoBehaviour
 {
     public Transform target;
     public float speed = 5.0f;
@@ -11,7 +14,7 @@ public class Unit : MonoBehaviour
 
     void Start()
     {
-        PathRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+        PathRequestManager.RequestPath(transform.position, target.position, OnPathFound); //Example Path Requisition
     }
 
     public void OnPathFound(Vector3[] newPath, bool pathSuccessful)
@@ -43,6 +46,7 @@ public class Unit : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
     void OnDrawGizmos()
     {
         if (path != null)
@@ -63,4 +67,5 @@ public class Unit : MonoBehaviour
             }
         }
     }
+#endif
 }

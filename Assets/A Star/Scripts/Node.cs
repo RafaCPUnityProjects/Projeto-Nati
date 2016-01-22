@@ -1,13 +1,15 @@
-﻿using UnityEngine;
-using System.Collections;
-using System;
+﻿/* 
+    Node class used in the algorithm
+*/
+
+using UnityEngine;
 
 public class Node : IHeapItem<Node>
 {
     public bool walkable;
     public Vector3 worldPosition;
-    public int gridX;
-    public int gridY;
+    public int gridX; //x pos in the grid
+    public int gridY; //y pos in the grid
     public int movementPenalty;
 
     public int gCost;

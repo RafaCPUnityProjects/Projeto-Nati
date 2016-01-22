@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿/* 
+    This is the pathfinding  class that employs the A* algorithm
+*/
+
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System;
-using System.Linq;
 
 [RequireComponent(typeof(Grid))]
 [RequireComponent(typeof(PathRequestManager))]
@@ -18,20 +20,26 @@ public class Pathfinding : MonoBehaviour
         requestManager = GetComponent<PathRequestManager>();
     }
 
+    public void StartFindPath(Vector3 startPos, Vector3 targetPos)
+    {
+        StartCoroutine(FindPath(startPos, targetPos));
+    }
+
     IEnumerator FindPath(Vector3 startPos, Vector3 targetPos)
     {
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
+        //Stopwatch sw = new Stopwatch(); //stopwatch to keep track of the search times
+        //sw.Start();
 
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
-        Node startNode = grid.NodeFromWorldPoint(startPos);
-        Node targetNode = grid.NodeFromWorldPoint(targetPos);
+        // A* algorithm
+        Node startNode = grid.WorldPoint2Node(startPos);
+        Node targetNode = grid.WorldPoint2Node(targetPos);
 
         if (startNode.walkable && targetNode.walkable)
         {
-            Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
+            Heap<Node> openSet = new Heap<Node>(grid.MaxGridSize);
             HashSet<Node> closedSet = new HashSet<Node>();
 
             openSet.Add(startNode);
@@ -43,8 +51,8 @@ public class Pathfinding : MonoBehaviour
 
                 if (currentNode == targetNode)
                 {
-                    sw.Stop();
-                    print("Path found in: " + sw.ElapsedMilliseconds + " ms");
+                    //sw.Stop();
+                    //print("Path found in: " + sw.ElapsedMilliseconds + " ms");
                     pathSuccess = true;
                     break;
                 }
@@ -56,8 +64,8 @@ public class Pathfinding : MonoBehaviour
                         continue;
                     }
 
-                    int newMovementCostToNeighbour = 
-                        currentNode.gCost + 
+                    int newMovementCostToNeighbour =
+                        currentNode.gCost +
                         GetDistance(currentNode, neighbourNode) +
                         neighbourNode.movementPenalty;
                     if (newMovementCostToNeighbour < neighbourNode.gCost || !openSet.Contains(neighbourNode))
@@ -81,17 +89,12 @@ public class Pathfinding : MonoBehaviour
         yield return null;
         if (pathSuccess)
         {
-            waypoints = RetracePath(startNode, targetNode);
+            waypoints = Nodes2WorldPoints(startNode, targetNode);
         }
         requestManager.FinishProcessingPath(waypoints, pathSuccess);
     }
 
-    public void StartFindPath(Vector3 startPos, Vector3 targetPos)
-    {
-        StartCoroutine(FindPath(startPos, targetPos));
-    }
-
-    Vector3[] RetracePath(Node startNode, Node endNode)
+    Vector3[] Nodes2WorldPoints(Node startNode, Node endNode)
     {
         List<Node> path = new List<Node>();
         Node currentNode = endNode;
@@ -106,6 +109,7 @@ public class Pathfinding : MonoBehaviour
         return waypoints;
     }
 
+    //Returns a simpler path removing unnecessary points
     private Vector3[] SimplifyPath(List<Node> path)
     {
         List<Vector3> waypoints = new List<Vector3>();
