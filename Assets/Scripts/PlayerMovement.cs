@@ -32,18 +32,18 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        string xAxisName = "L_XAxis_" + playerNumber;
-        string yAxisName = "L_YAxis_" + playerNumber;
-        string jumpButton = "A_" + playerNumber;
-        string grabButton = "X_" + playerNumber;
-        string hitButton = "B_" + playerNumber;
+        //string xAxisName = "L_XAxis_" + playerNumber;
+        //string yAxisName = "L_YAxis_" + playerNumber;
+        //string jumpButton = "A_" + playerNumber;
+        //string grabButton = "X_" + playerNumber;
+        //string hitButton = "B_" + playerNumber;
 
-        float xAxisValue = Input.GetAxis(xAxisName);
-        float yAxisValue = Input.GetAxis(yAxisName);
+        float xAxisValue = Input.GetAxisRaw(xAxisName);
+        float yAxisValue = Input.GetAxisRaw(yAxisName);
 
-        transform.Rotate(Vector3.up, xAxisValue * rotateSpeed);
+        //transform.Rotate(Vector3.up, xAxisValue * rotateSpeed);
 
         float jump = 0.0f;
 
@@ -53,13 +53,15 @@ public class PlayerMovement : MonoBehaviour
             jump = jumpForce;
         }
 
-        float speed = yAxisValue * moveSpeed;
-        Vector3 movementVector = new Vector3(speed, jump, 0);
+        //float speed = yAxisValue * moveSpeed * Time.fixedDeltaTime;
+        Vector3 movementVector = new Vector3(xAxisValue, 0, yAxisValue).normalized * moveSpeed;
 
-        Vector3 forwardVector = transform.TransformDirection(Vector3.forward);
+        //Vector3 forwardVector = transform.TransformDirection(Vector3.forward);
 
+        //movementVector = new Vector3(forwardVector.x * movementVector.x, forwardVector.y * movementVector.y, forwardVector.z * movementVector.z);
 
-        myRigidBody.AddRelativeForce(movementVector);
+        //myRigidBody.AddRelativeForce(movementVector);
+        myRigidBody.MovePosition(myRigidBody.position + movementVector * Time.fixedDeltaTime);
     }
 
     bool IsGrounded()
