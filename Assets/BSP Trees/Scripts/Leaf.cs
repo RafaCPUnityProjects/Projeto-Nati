@@ -3,9 +3,7 @@ using System.Collections;
 
 public class Leaf : MonoBehaviour
 {
-
-    /*
-
+    public string seed;
     private const int MIN_LEAF_SIZE = 6;
 
     public int y, x, width, height; // the position and size of this Leaf
@@ -34,7 +32,8 @@ public class Leaf : MonoBehaviour
         // if the width is >25% larger than height, we split vertically
         // if the height is >25% larger than the width, we split horizontally
         // otherwise we split randomly
-        bool splitH = FlxG.random() > 0.5;
+        System.Random random = new System.Random(seed.GetHashCode());
+        bool splitH = random.NextDouble() > .5f;
         if (width > height && width / height >= 1.25)
             splitH = false;
         else if (height > width && height / width >= 1.25)
@@ -44,7 +43,7 @@ public class Leaf : MonoBehaviour
         if (max <= MIN_LEAF_SIZE)
             return false; // the area is too small to split any more...
 
-        int split = Registry.randomNumber(MIN_LEAF_SIZE, max); // determine where we're going to split
+        int split = Random.Range(MIN_LEAF_SIZE, max); // determine where we're going to split
 
         // create our left and right children based on the direction of the split
         if (splitH)
@@ -58,5 +57,13 @@ public class Leaf : MonoBehaviour
             rightChild = new Leaf(x + split, y, width - split, height);
         }
         return true; // split successful!
-    }*/
+    }
+
+    public class Rectangle
+    {
+        public Rectangle()
+        {
+
+        }
+    }
 }
