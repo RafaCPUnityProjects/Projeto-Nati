@@ -1,30 +1,23 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
-public class Leaf : MonoBehaviour
+public class Leaf
 {
-    public static string seed = "0";
-    private const int MIN_LEAF_SIZE = 6;
-
     public int y, x, width, height; // the position and size of this Leaf
 
     public Leaf leftChild; // the Leaf's left child Leaf
     public Leaf rightChild; // the Leaf's right child Leaf
     public Room room; // the room that is inside this Leaf
-    public List<Vector2> halls; // hallways to connect this Leaf to other Leafs
+    public List<Room> halls; // hallways to connect this Leaf to other Leafs
 
-    System.Random random = new System.Random(seed.GetHashCode());
-    List<Leaf> debug_leafs;
-
-    void Awake()
+    public int MIN_LEAF_SIZE
     {
-
-    }
-
-    void Start()
-    {
-        Initialize();
+        get
+        {
+            return LeafTutorial.MIN_LEAF_SIZE;
+        }
     }
 
     public Leaf(int X, int Y, int Width, int Height)
@@ -34,6 +27,9 @@ public class Leaf : MonoBehaviour
         y = Y;
         width = Width;
         height = Height;
+
+        room = new Room(x, y, width * .8f, height * .8f);
+        //Debug.Log("x=" + x + " y=" + y + " width=" + width + " height=" + height);
     }
 
     public bool Split()
@@ -47,7 +43,7 @@ public class Leaf : MonoBehaviour
         // if the height is >25% larger than the width, we split horizontally
         // otherwise we split randomly
 
-        bool splitH = random.NextDouble() > .5f;
+        bool splitH = LeafTutorial.random.NextDouble() > .5f;
         if (width > height && width / height >= 1.25)
             splitH = false;
         else if (height > width && height / width >= 1.25)
@@ -57,7 +53,7 @@ public class Leaf : MonoBehaviour
         if (max <= MIN_LEAF_SIZE)
             return false; // the area is too small to split any more...
 
-        int split = random.Next(MIN_LEAF_SIZE, max); // determine where we're going to split
+        int split = LeafTutorial.random.Next(MIN_LEAF_SIZE, max); // determine where we're going to split
 
         // create our left and right children based on the direction of the split
         if (splitH)
@@ -73,45 +69,49 @@ public class Leaf : MonoBehaviour
         return true; // split successful!
     }
 
-    void Initialize()
+    Room GetRoom()
     {
-        const int MAX_LEAF_SIZE = 20;
-
-
-        List<Leaf> _leafs = new List<Leaf>();
-
-        //Leaf l; // helper Leaf
-
-        // first, create a Leaf to be the 'root' of all Leafs.
-        Leaf root = new Leaf(0, 0, width, height);
-        _leafs.Add(root);
-
-        bool did_split = true;
-        // we loop through every Leaf in our Vector over and over again, until no more Leafs can be split.
-        while (did_split)
+        if (room != null)
         {
-            did_split = false;
-            foreach (var leaf in _leafs)
-
+            return room;
+        }
+        else
+        {
+            Room lRoom = new Room();
+            Room rRoom = new Room();
+            Debug.Log(lRoom == null);
+            if (leftChild != null)
             {
-                if (leaf.leftChild == null && leaf.rightChild == null) // if this Leaf is not already split...
-                {
-                    // if this Leaf is too big, or 75% chance...
-                    if (leaf.width > MAX_LEAF_SIZE || leaf.height > MAX_LEAF_SIZE || random.NextDouble() > 0.25)
-                    {
-                        if (leaf.Split()) // split the Leaf!
-                        {
-                            // if we did split, push the child leafs to the Vector so we can loop into them next
-                            _leafs.Add(leaf.leftChild);
-                            _leafs.Add(leaf.rightChild);
-                            did_split = true;
-                        }
-                    }
-                }
+                lRoom = leftChild.GetRoom();
+            }
+            if (rightChild != null)
+            {
+                rRoom = leftChild.GetRoom();
+            }
+            if (lRoom == null && rRoom == null)
+            {
+                Debug.Log("both rooms null");
+                return null;
+            }
+            else if (rRoom == null)
+            {
+                Debug.Log("rRoom null");
+                return lRoom;
+            }
+            else if (lRoom == null)
+            {
+                Debug.Log("lRoom null");
+                return rRoom;
+            }
+            else if (LeafTutorial.random.NextDouble() > 0.5f)
+            {
+                return lRoom;
+            }
+            else
+            {
+                return rRoom;
             }
         }
-        debug_leafs = new List<Leaf>();
-        debug_leafs = _leafs;
     }
 
 
@@ -119,6 +119,8 @@ public class Leaf : MonoBehaviour
     {
         float worldPosX, worldPosY;
         float width, height;
+
+        public bool isARoom;
 
         public Room()
         {
@@ -128,19 +130,49 @@ public class Leaf : MonoBehaviour
             this.height = 0;
         }
 
-        public Room(float worldPosX, float worldPosY, float width, float height)
+        public Room(float worldPosX, float worldPosY, float width, float height, bool isARoom = true)
         {
             this.worldPosX = worldPosX;
             this.worldPosY = worldPosY;
             this.width = width;
             this.height = height;
+            this.isARoom = isARoom;
+        }
+
+        public float left
+        {
+            get
+            {
+                return worldPosX - width / 2;
+            }
+        }
+        public float right
+        {
+            get
+            {
+                return worldPosX + width / 2;
+            }
+        }
+        public float top
+        {
+            get
+            {
+                return worldPosY + height / 2;
+            }
+        }
+        public float bottom
+        {
+            get
+            {
+                return worldPosY - height / 2;
+            }
         }
 
         public Vector3 Center
         {
             get
             {
-                return new Vector3(worldPosX, 0, worldPosY);
+                return new Vector3((width + worldPosX) / 2f, 0, (height + worldPosY) / 2f);
             }
         }
 
@@ -153,15 +185,134 @@ public class Leaf : MonoBehaviour
         }
     }
 
-    void OnDrawGizmos()
+    public void CreateRooms()
     {
-        if (debug_leafs != null)
+        // this function generates all the rooms and hallways for this leaf and all it's children.
+        if (leftChild != null || rightChild != null)
         {
-            foreach (var leaf in debug_leafs)
+            // this leaf has been split, so go into the children leafs
+            if (leftChild != null)
             {
-                Gizmos.color = Color.white;
-                Gizmos.DrawCube(leaf.room.Center, leaf.room.Size);
+                leftChild.CreateRooms();
+            }
+            if (rightChild != null)
+            {
+                rightChild.CreateRooms();
+            }
+
+            // if there are both left and right children in this leaf, create a hallway between them
+            if (leftChild != null && rightChild != null)
+            {
+
+                CreateHall(leftChild.GetRoom(), rightChild.GetRoom());
+            }
+
+        }
+        else
+        {
+            // this leaf is the ready to make a room
+            Vector2 roomSize;
+            Vector2 roomPos;
+            // the room can be between 3 x 3 tiles to the size of the leaf - 2.
+            roomSize = new Vector2(LeafTutorial.random.Next(3, width - 2), LeafTutorial.random.Next(3, height - 2));
+            // place the room within the leaf don't put it right against the side of the leaf (that would merge rooms together)
+            roomPos = new Vector2(LeafTutorial.random.Next(1, (int)(width - roomSize.x - 1)), LeafTutorial.random.Next(1, (int)(height - roomSize.y - 1)));
+            room = new Room(x + roomPos.x, y + roomPos.y, roomSize.x, roomSize.y);
+        }
+    }
+
+    public void CreateHall(Room l, Room r)
+    {
+        // now we connect these 2 rooms together with hallways.
+        // this looks pretty complicated, but it's just trying to figure out which  point is where and then either draw a straight line, or a pair of lines to make a right-angle to connect them.
+        // you could do some extra logic to make your halls more bendy, or do some more advanced things if you wanted.
+
+        halls = new List<Room>();
+
+        Vector2 point1 = new Vector2(LeafTutorial.random.Next((int)(l.left + 1), (int)(l.right - 2)), LeafTutorial.random.Next((int)(l.bottom - 2), (int)(l.top + 1)));
+        Vector2 point2 = new Vector2(LeafTutorial.random.Next((int)(r.left + 1), (int)(r.right - 2)), LeafTutorial.random.Next((int)(r.bottom - 2), (int)(r.top + 1)));
+
+        float w = point2.x - point1.x;
+        float h = point2.y - point1.y;
+
+        if (w < 0)
+        {
+            if (h < 0)
+            {
+                if (LeafTutorial.random.NextDouble() < 0.5)
+                {
+                    halls.Add(new Room(point2.x, point1.y, Math.Abs(w), 1,false));
+                    halls.Add(new Room(point2.x, point2.y, 1, Math.Abs(h), false));
+                }
+                else
+                {
+                    halls.Add(new Room(point2.x, point2.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point1.x, point2.y, 1, Math.Abs(h), false));
+                }
+            }
+            else if (h > 0)
+            {
+
+                if (LeafTutorial.random.NextDouble() < 0.5)
+                {
+                    halls.Add(new Room(point2.x, point1.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point2.x, point1.y, 1, Math.Abs(h), false));
+                }
+                else
+                {
+                    halls.Add(new Room(point2.x, point2.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point1.x, point1.y, 1, Math.Abs(h), false));
+                }
+            }
+            else // if (h == 0)
+            {
+                halls.Add(new Room(point2.x, point2.y, Math.Abs(w), 1, false));
             }
         }
+        else if (w > 0)
+        {
+            if (h < 0)
+            {
+                if (LeafTutorial.random.NextDouble() < 0.5)
+                {
+                    halls.Add(new Room(point1.x, point2.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point1.x, point2.y, 1, Math.Abs(h), false));
+                }
+                else
+                {
+                    halls.Add(new Room(point1.x, point1.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point2.x, point2.y, 1, Math.Abs(h), false));
+                }
+            }
+            else if (h > 0)
+            {
+                if (LeafTutorial.random.NextDouble() < 0.5)
+                {
+                    halls.Add(new Room(point1.x, point1.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point2.x, point1.y, 1, Math.Abs(h), false));
+                }
+                else
+                {
+                    halls.Add(new Room(point1.x, point2.y, Math.Abs(w), 1, false));
+                    halls.Add(new Room(point1.x, point1.y, 1, Math.Abs(h), false));
+                }
+            }
+            else // if (h == 0)
+            {
+                halls.Add(new Room(point1.x, point1.y, Math.Abs(w), 1, false));
+            }
+        }
+        else // if (w == 0)
+        {
+            if (h < 0)
+            {
+                halls.Add(new Room(point2.x, point2.y, 1, Math.Abs(h), false));
+            }
+            else if (h > 0)
+            {
+                halls.Add(new Room(point1.x, point1.y, 1, Math.Abs(h), false));
+            }
+        }
+
     }
 }
