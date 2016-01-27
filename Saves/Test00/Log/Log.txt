@@ -1,0 +1,47 @@
+Making room:int x=40, int y=12, int xlength=8, int ylength=6, int direction=East
+Making room:int x=47, int y=13, int xlength=8, int ylength=6, int direction=East
+Making room:int x=47, int y=15, int xlength=8, int ylength=6, int direction=South
+Making room:int x=39, int y=12, int xlength=8, int ylength=6, int direction=West
+Making room:int x=35, int y=9, int xlength=8, int ylength=6, int direction=North
+Making room:int x=33, int y=13, int xlength=8, int ylength=6, int direction=West
+Making room:int x=29, int y=13, int xlength=8, int ylength=6, int direction=West
+Making room:int x=49, int y=10, int xlength=8, int ylength=6, int direction=North
+Making room:int x=28, int y=15, int xlength=8, int ylength=6, int direction=South
+Making room:int x=27, int y=20, int xlength=8, int ylength=6, int direction=South
+Making room:int x=51, int y=7, int xlength=8, int ylength=6, int direction=East
+Making room:int x=31, int y=17, int xlength=8, int ylength=6, int direction=East
+Making room:int x=41, int y=15, int xlength=8, int ylength=6, int direction=South
+Making room:int x=24, int y=17, int xlength=8, int ylength=6, int direction=West
+Making room:int x=35, int y=19, int xlength=8, int ylength=6, int direction=South
+Making room:int x=18, int y=18, int xlength=8, int ylength=6, int direction=West
+Making room:int x=16, int y=15, int xlength=8, int ylength=6, int direction=North
+Making room:int x=49, int y=5, int xlength=8, int ylength=6, int direction=North
+Making room:int x=21, int y=14, int xlength=8, int ylength=6, int direction=North
+Making room:int x=46, int y=4, int xlength=8, int ylength=6, int direction=West
+Making room:int x=37, int y=21, int xlength=8, int ylength=6, int direction=East
+SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+S                                    #         ||||                            S
+S                                    #  ||||||||__D###                         S
+S                                    #  |_____||__|                            S
+S                                    #  |______D__|                            S
+S                                    #  |||||||||_|||||||                      S
+S                               |||||D|        ||D||____|                      S
+S                               |_____|   # ###D__D_____|                      S
+S                           ####D_____|   #  # |__|||||||                      S
+S                               |||_|||   #  # |__|                            S
+S                  ||||           |D||||||D||D|||_|                            S
+S             |||| |__|  ||||||||||____||_____|||D||                           S
+S             |__| |__|  |___||__||_____D_-_+_||___|                           S
+S             |__| |__|  |____D___D____||_____D____|                           S
+S             |__| ||_|  |||D|||||||||D||D||D||D||||                           S
+S             ||_| ||D||||||_|||||||| #||_| #||_D#####                         S
+S              |D|||____||____||____| #|__| #|__|                              S
+S              |__||_____D____D_____| #|__| #|__|                              S
+S              |___D____||____|||||D|  ||||  |__|                              S
+S              ||||||||||||D|||  ||_|||||||| ||||                              S
+S                       |||_||   |__||_____|                                   S
+S                       |____|   |__D______|                                   S
+S                       |____|   |__||||||||                                   S
+S                       ||||||   ||||                                          S
+SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+

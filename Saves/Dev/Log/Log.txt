@@ -14,6 +14,4 @@ ID:0,Name:Air
 ID:1,Name:Stone
 ID:2,Name:Dirt
 ID:3,Name:Sand
-  at (wrapper managed-to-native) UnityEngine.Time:get_time ()
-  at Chunk.Generate () [0x00015] in E:\Projetos\Projeto Nati\Assets\Source\Chunk\Chunk.cs:39 
 Worldthread succesfully closed
