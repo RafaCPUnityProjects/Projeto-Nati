@@ -6,10 +6,13 @@ using _Dungeon = MyDungeon.Dungeon;
 
 public class MyDungeonGenerator : MonoBehaviour
 {
+
+    public int sizeX = 20;
+    public int sizeY = 20;
     void Start()
     {
         System.Random random = new System.Random("0".GetHashCode());
-        _Dungeon dungeon = new _Dungeon(20, 20, random, PrintOutput);
+        _Dungeon dungeon = new _Dungeon(sizeX, sizeY, random, PrintOutput);
     }
 
     public void PrintOutput(_Dungeon.Tile[,] tileMap)
@@ -60,27 +63,80 @@ namespace MyDungeon
         {
             tileMap = new Tile[sizeX, sizeY];
             Initialize();
-            Coord startRoomCenter = new Coord(sizeX / 2, sizeY / 2); //starting room in the middle fo the map
-            //Debug.Log("center of the map = " + sizeX / 2 + "," + sizeY / 2);
-            int startRoomSizeX = 8;
-            int startRoomSizeY = 6;
-            MakeRoom(startRoomCenter, startRoomSizeX, startRoomSizeY);
-            MakeRoom(new Coord(2, 2), 4, 4);
+            //Coord startRoomCenter = new Coord(sizeX / 2, sizeY / 2); //starting room in the middle fo the map
+            ////Debug.Log("center of the map = " + sizeX / 2 + "," + sizeY / 2);
+            //int startRoomSizeX = 8;
+            //int startRoomSizeY = 6;
+            //MakeRoom(startRoomCenter, startRoomSizeX, startRoomSizeY);
+            //MakeRoom(new Coord(2, 2), 4, 4);
+
             //criar algoritmo que decide onde enfiar as salas
+            PlaceRooms();
             callback(tileMap);
         }
 
-        void MakeRoom(Coord center, int sizeX, int sizeY)
+        void PlaceRooms()
         {
-            if (sizeX < 3 || sizeY < 3)
+            for (int i = 0; i < 100; i++)
             {
-                Debug.Log("Room too small: " + sizeX + "," + sizeY);
-                return;
+                int size = 9;
+                int rectangularity = 2;
+                int width = size;
+                int height = size;
+                if (random.NextDouble() > 0.5f)
+                {
+                    width += rectangularity;
+                }
+                else
+                {
+                    height += rectangularity;
+                }
+
+                int x = random.Next((sizeX - width) / 2) * 2 + 1;
+                int y = random.Next((sizeY - height) / 2) * 2 + 1;
+                if(OutsideLimits(x,y,width,height))
+                {
+                    continue;
+                }
+
+                Room room = new Room(new Coord(x, y), width, height);
+
+                bool overlaps = false;
+                foreach (Room other in rooms)
+                {
+                    if (other.DistanceToOther(room) <= 0)
+                    {
+                        overlaps = true;
+                        break;
+                    }
+                }
+
+                if (overlaps)
+                {
+                    continue;
+                }
+
+                room.CreateRoom(ref tileMap);
+                rooms.Add(room);
             }
-            Room room = new Room(center, sizeX, sizeY);
-            room.CreateRoom(ref tileMap);
-            rooms.Add(room);
         }
+
+        bool OutsideLimits(int x, int y, int width, int height)
+        {
+            return x - width / 2 < 0 || y - height / 2 < 0 || x + width / 2 > sizeX || y + height / 2 > sizeY;
+        }
+
+        //void MakeRoom(Coord center, int sizeX, int sizeY)
+        //{
+        //    if (sizeX < 3 || sizeY < 3)
+        //    {
+        //        Debug.Log("Room too small: " + sizeX + "," + sizeY);
+        //        return;
+        //    }
+        //    Room room = new Room(center, sizeX, sizeY);
+        //    room.CreateRoom(ref tileMap);
+        //    rooms.Add(room);
+        //}
 
         public bool IsInsideMap(int x, int y)
         {
@@ -162,14 +218,14 @@ namespace MyDungeon
 
             public void CreateRoom(ref Tile[,] tileMap)
             {
+                Debug.Log("Room center:" + center.x + "," + center.y + " size:" + sizeX + "," + sizeY);
                 roomTiles = new Tile[sizeX, sizeY];
-
-                for (int x = 0; x < sizeX; x++)
+                for (int x = -sizeX / 2; x < sizeX / 2; x++)
                 {
-                    for (int y = 0; y < sizeY; y++)
+                    for (int y = -sizeY / 2; y < sizeY / 2; y++)
                     {
                         TileType type;
-                        if (x == 0 || x == sizeX - 1 || y == 0 || y == sizeY - 1)
+                        if (x == -sizeX / 2 || x == sizeX / 2 - 1 || y == -sizeY / 2 || y == sizeY / 2 - 1)
                         {
                             type = TileType.wall;
                         }
@@ -177,16 +233,49 @@ namespace MyDungeon
                         {
                             type = TileType.floor;
                         }
-                        int xWorldPos = center.x - sizeX / 2 + x;
-                        int yWorldPos = center.y - sizeY / 2 + y;
-                        
+                        int xWorldPos = center.x + x;
+                        int yWorldPos = center.y + y;
+
                         //Debug.Log("pos = " + xWorldPos + "," + yWorldPos + " - " + type.ToString());
                         Coord coord = new Coord(xWorldPos, yWorldPos);
                         Tile tile = new Tile(coord, type);
 
-                        roomTiles[x, y] = tileMap[xWorldPos, yWorldPos] = tile;
+                        //Debug.Log("worldPos = " + xWorldPos + "," + yWorldPos);
+                        roomTiles[x + sizeX / 2, y + sizeY / 2] = tileMap[xWorldPos, yWorldPos] = tile;
                     }
                 }
+            }
+
+            public int DistanceToOther(Room other)
+            {
+                Vector2 distanceVector = Vector2.zero;
+                if (other.center.x > center.x)//right
+                {
+                    distanceVector.x = (other.center.x - other.sizeX / 2) - (center.x + sizeX / 2);
+                }
+                else if (other.center.x < center.x)//left
+                {
+                    distanceVector.x = (center.x - sizeX / 2) - (other.center.x + other.sizeX / 2);
+                }
+                else//same x, maybe above or bellow
+                {
+                    distanceVector.x = 0;
+                }
+                if (other.center.y > center.y) //above
+                {
+                    distanceVector.y = (other.center.y - other.sizeY / 2) - (center.y + sizeY / 2);
+                }
+                else if (other.center.y < center.y) // bellow
+                {
+                    distanceVector.y = (center.y - sizeY / 2) - (other.center.y + other.sizeY / 2);
+                }
+                else//same y, maybe left or right
+                {
+                    distanceVector.y = 0;
+                }
+                int distance = (int)Mathf.Sqrt(Mathf.Pow(distanceVector.x, 2) + Mathf.Pow(distanceVector.y, 2));
+                //Debug.Log("Distance between rooms: " + distance);
+                return distance;
             }
         }
 
