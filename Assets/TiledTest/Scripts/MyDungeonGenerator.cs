@@ -9,10 +9,12 @@ public class MyDungeonGenerator : MonoBehaviour
 
     public int sizeX = 20;
     public int sizeY = 20;
+    public Vector2 roomSizeLimits = new Vector2(3, 9);
+    public Vector2 roomRectangularityLimits = new Vector2(0, 4);
     void Start()
     {
         System.Random random = new System.Random("0".GetHashCode());
-        _Dungeon dungeon = new _Dungeon(sizeX, sizeY, random, PrintOutput);
+        _Dungeon dungeon = new _Dungeon(sizeX, sizeY, roomSizeLimits, roomRectangularityLimits, random, PrintOutput);
     }
 
     public void PrintOutput(_Dungeon.Tile[,] tileMap)
@@ -38,6 +40,9 @@ namespace MyDungeon
     {
         //dungeon map size
         int sizeX, sizeY;
+        Vector2 roomSizeLimits;
+        Vector2 roomRectangularityLimits;
+
         //lists
         List<Room> rooms;
         List<Corridor> corridors;
@@ -49,10 +54,12 @@ namespace MyDungeon
         Tile[,] tileMap;
         Action<Tile[,]> callback;
 
-        public Dungeon(int sizeX, int sizeY, System.Random randomGenerator, Action<Tile[,]> callback)
+        public Dungeon(int sizeX, int sizeY, Vector2 roomSize, Vector2 rectangularity, System.Random randomGenerator, Action<Tile[,]> callback)
         {
             this.sizeX = sizeX;
             this.sizeY = sizeY;
+            this.roomSizeLimits = roomSize;
+            this.roomRectangularityLimits = rectangularity;
             random = randomGenerator;
             this.callback = callback;
 
@@ -79,17 +86,19 @@ namespace MyDungeon
         {
             for (int i = 0; i < 100; i++)
             {
-                int size = 9;
-                int rectangularity = 2;
-                int width = size;
-                int height = size;
+                int roomSize = random.Next((int)roomSizeLimits.x, (int)roomSizeLimits.y);
+                int rectangularity = random.Next((int)roomRectangularityLimits.x, (int)roomRectangularityLimits.y); ;
+                int width = roomSize;
+                int height = roomSize;
                 if (random.NextDouble() > 0.5f)
                 {
                     width += rectangularity;
+                    Debug.Log("random.NextDouble() > 0.5f, width = " + width);
                 }
                 else
                 {
                     height += rectangularity;
+                    Debug.Log("random.NextDouble() <= 0.5f, height = " + height);
                 }
 
                 int x = random.Next((sizeX - width) / 2) * 2 + 1;
@@ -290,7 +299,7 @@ namespace MyDungeon
                 {
                     distanceVector.y = 0;
                 }
-                
+
                 float distance = Mathf.Sqrt(Mathf.Pow(distanceVector.x, 2) + Mathf.Pow(distanceVector.y, 2));
                 //Debug.Log("Distance between rooms: " + distance);
                 return distance;
