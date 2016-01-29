@@ -39,10 +39,11 @@ namespace MyDungeon
     public class Dungeon
     {
         //dungeon map size
-        int sizeX, sizeY;
+        int mapSizeX, mapSizeY;
+        Rect bounds;
         Vector2 roomSizeLimits;
         Vector2 roomRectangularityLimits;
-
+        public static int currentRegion = -1;
         //lists
         List<Room> rooms;
         List<Corridor> corridors;
@@ -56,8 +57,9 @@ namespace MyDungeon
 
         public Dungeon(int sizeX, int sizeY, Vector2 roomSize, Vector2 rectangularity, System.Random randomGenerator, Action<Tile[,]> callback)
         {
-            this.sizeX = sizeX;
-            this.sizeY = sizeY;
+            bounds = new Rect(0, 0, sizeX, sizeY);
+            this.mapSizeX = sizeX;
+            this.mapSizeY = sizeY;
             this.roomSizeLimits = roomSize;
             this.roomRectangularityLimits = rectangularity;
             random = randomGenerator;
@@ -68,7 +70,11 @@ namespace MyDungeon
 
         void GenerateDungeon()
         {
-            tileMap = new Tile[sizeX, sizeY];
+            if (mapSizeX % 2 == 0 || mapSizeY % 2 == 0)
+            {
+                throw new System.ArgumentException("The stage must be odd-sized.");
+            }
+
             Initialize();
             //Coord startRoomCenter = new Coord(sizeX / 2, sizeY / 2); //starting room in the middle fo the map
             ////Debug.Log("center of the map = " + sizeX / 2 + "," + sizeY / 2);
@@ -79,7 +85,46 @@ namespace MyDungeon
 
             //criar algoritmo que decide onde enfiar as salas
             PlaceRooms();
+            //fill the empty space with mazes
+
+            //connect regions
+
+            //remove deadends
+
+            //decorate rooms
             callback(tileMap);
+        }
+
+        void FillWithMazes()
+        {
+            for (int y = 1; y < bounds.height; y += 2)
+            {
+                for (int x = 1; x < bounds.width; x += 2)
+                {
+                    //Vector2 pos = new Vector2(x, y);
+                    if (tileMap[x,y].type != TileType.wall) continue;
+                    GrowMaze(tileMap[x,y]);
+                }
+            }
+        }
+
+        void GrowMaze(Tile start)
+        {
+            List<Tile> cells = new List<Tile>();
+            Direction lastDir;
+            currentRegion++;
+            start.region = currentRegion;
+            start.type = TileType.floor;
+            tileMap[start.coord.x, start.coord.y] = start;
+
+            cells.Add(start);
+            while(cells.Count > 0)
+            {
+                Tile cell = cells[cells.Count - 1];
+
+                //open adjacent cells
+                var unmadeCells = new List<Direction>();
+            }
         }
 
         void PlaceRooms()
@@ -101,8 +146,8 @@ namespace MyDungeon
                     Debug.Log("random.NextDouble() <= 0.5f, height = " + height);
                 }
 
-                int x = random.Next((sizeX - width) / 2) * 2 + 1;
-                int y = random.Next((sizeY - height) / 2) * 2 + 1;
+                int x = random.Next((mapSizeX - width) / 2) * 2 + 1;
+                int y = random.Next((mapSizeY - height) / 2) * 2 + 1;
                 if (OutsideLimits(x, y, width, height))
                 {
                     continue;
@@ -132,7 +177,7 @@ namespace MyDungeon
 
         bool OutsideLimits(int x, int y, int width, int height)
         {
-            return x - width / 2 < 0 || y - height / 2 < 0 || x + width / 2 > sizeX || y + height / 2 > sizeY;
+            return x - width / 2 < 0 || y - height / 2 < 0 || x + width / 2 > mapSizeX || y + height / 2 > mapSizeY;
         }
 
         //void MakeRoom(Coord center, int sizeX, int sizeY)
@@ -149,7 +194,7 @@ namespace MyDungeon
 
         public bool IsInsideMap(int x, int y)
         {
-            bool inside = x >= 0 && x < sizeX && y >= 0 && y < sizeY;
+            bool inside = x >= 0 && x < mapSizeX && y >= 0 && y < mapSizeY;
             return inside;
         }
 
@@ -160,13 +205,15 @@ namespace MyDungeon
 
         private void Initialize()
         {
+            tileMap = new Tile[mapSizeX, mapSizeY];
             rooms = new List<Room>();
 
+            //filling tilemap with walls
             for (int x = 0; x < tileMap.GetLength(0); x++)
             {
                 for (int y = 0; y < tileMap.GetLength(1); y++)
                 {
-                    tileMap[x, y] = new Tile(new Coord(x, y), TileType.unused);
+                    tileMap[x, y] = new Tile(new Coord(x, y), TileType.wall);
                 }
             }
         }
@@ -211,7 +258,7 @@ namespace MyDungeon
         public class Tile
         {
             public Coord coord;
-
+            public int region;
             public TileType type;
 
             public Tile(TileType type = TileType.unused)
@@ -241,6 +288,7 @@ namespace MyDungeon
 
             public void CreateRoom(ref Tile[,] tileMap)
             {
+                Dungeon.currentRegion++;
                 int width = (int)rect.width;
                 int height = (int)rect.height;
                 int centerX = (int)rect.center.x;
@@ -250,22 +298,22 @@ namespace MyDungeon
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        TileType type;
-                        if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
-                        {
-                            type = TileType.wall;
-                        }
-                        else
-                        {
-                            type = TileType.floor;
-                        }
+                        TileType type = TileType.floor;
+                        //if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
+                        //{
+                        //    type = TileType.wall;
+                        //}
+                        //else
+                        //{
+                        //    type = TileType.floor;
+                        //}
                         int xWorldPos = centerX + x - width / 2;
                         int yWorldPos = centerY + y - width / 2;
 
                         //Debug.Log("pos = " + xWorldPos + "," + yWorldPos + " - " + type.ToString());
                         Coord coord = new Coord(xWorldPos, yWorldPos);
                         Tile tile = new Tile(coord, type);
-
+                        tile.region = Dungeon.currentRegion;
                         //Debug.Log("worldPos = " + xWorldPos + "," + yWorldPos);
                         roomTiles[x, y] = tileMap[xWorldPos, yWorldPos] = tile;
                     }
