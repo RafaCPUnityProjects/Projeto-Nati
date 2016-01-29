@@ -94,17 +94,17 @@ namespace MyDungeon
 
                 int x = random.Next((sizeX - width) / 2) * 2 + 1;
                 int y = random.Next((sizeY - height) / 2) * 2 + 1;
-                if(OutsideLimits(x,y,width,height))
+                if (OutsideLimits(x, y, width, height))
                 {
                     continue;
                 }
 
-                Room room = new Room(new Coord(x, y), width, height);
+                Room room = new Room(new Rect(x, y, width, height));
 
                 bool overlaps = false;
                 foreach (Room other in rooms)
                 {
-                    if (other.DistanceToOther(room) <= 0)
+                    if (other.rect.Overlaps(room.rect))
                     {
                         overlaps = true;
                         break;
@@ -174,12 +174,29 @@ namespace MyDungeon
         {
             public int x;
             public int y;
-
+            public Vector2 pos
+            {
+                get
+                {
+                    return new Vector2(x, y);
+                }
+                set
+                {
+                    x = (int)value.x;
+                    y = (int)value.y;
+                }
+            }
             public Coord(int x = -1, int y = -1)
             {
                 this.x = x;
                 this.y = y;
             }
+            public Coord(Vector2 pos)
+            {
+                this.x = (int)pos.x;
+                this.y = (int)pos.y;
+            }
+
         }
 
         public class Tile
@@ -202,30 +219,30 @@ namespace MyDungeon
 
         public class Room
         {
-            public Coord center;
-            public int sizeX, sizeY;
+            public Rect rect;
 
             public Tile[,] roomTiles;
 
             public List<Room> connectedRooms;
 
-            public Room(Coord center, int sizeX, int sizeY)
+            public Room(Rect rect)
             {
-                this.center = center;
-                this.sizeX = sizeX;
-                this.sizeY = sizeY;
+                this.rect = rect;
             }
 
             public void CreateRoom(ref Tile[,] tileMap)
             {
-                Debug.Log("Room center:" + center.x + "," + center.y + " size:" + sizeX + "," + sizeY);
-                roomTiles = new Tile[sizeX, sizeY];
-                for (int x = -sizeX / 2; x < sizeX / 2; x++)
+                int width = (int)rect.width;
+                int height = (int)rect.height;
+                int centerX = (int)rect.center.x;
+                int centerY = (int)rect.center.y;
+                roomTiles = new Tile[width, height];
+                for (int x = 0; x < width; x++)
                 {
-                    for (int y = -sizeY / 2; y < sizeY / 2; y++)
+                    for (int y = 0; y < height; y++)
                     {
                         TileType type;
-                        if (x == -sizeX / 2 || x == sizeX / 2 - 1 || y == -sizeY / 2 || y == sizeY / 2 - 1)
+                        if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
                         {
                             type = TileType.wall;
                         }
@@ -233,47 +250,48 @@ namespace MyDungeon
                         {
                             type = TileType.floor;
                         }
-                        int xWorldPos = center.x + x;
-                        int yWorldPos = center.y + y;
+                        int xWorldPos = centerX + x - width / 2;
+                        int yWorldPos = centerY + y - width / 2;
 
                         //Debug.Log("pos = " + xWorldPos + "," + yWorldPos + " - " + type.ToString());
                         Coord coord = new Coord(xWorldPos, yWorldPos);
                         Tile tile = new Tile(coord, type);
 
                         //Debug.Log("worldPos = " + xWorldPos + "," + yWorldPos);
-                        roomTiles[x + sizeX / 2, y + sizeY / 2] = tileMap[xWorldPos, yWorldPos] = tile;
+                        roomTiles[x, y] = tileMap[xWorldPos, yWorldPos] = tile;
                     }
                 }
             }
 
-            public int DistanceToOther(Room other)
+            public float DistanceToOther(Room other)
             {
                 Vector2 distanceVector = Vector2.zero;
-                if (other.center.x > center.x)//right
+                if (other.rect.center.x > rect.center.x)//right
                 {
-                    distanceVector.x = (other.center.x - other.sizeX / 2) - (center.x + sizeX / 2);
+                    distanceVector.x = (other.rect.center.x - other.rect.width / 2) - (rect.center.x + rect.width / 2);
                 }
-                else if (other.center.x < center.x)//left
+                else if (other.rect.center.x < rect.center.x)//left
                 {
-                    distanceVector.x = (center.x - sizeX / 2) - (other.center.x + other.sizeX / 2);
+                    distanceVector.x = (rect.center.x - rect.width / 2) - (other.rect.center.x + other.rect.width / 2);
                 }
                 else//same x, maybe above or bellow
                 {
                     distanceVector.x = 0;
                 }
-                if (other.center.y > center.y) //above
+                if (other.rect.center.y > rect.center.y) //above
                 {
-                    distanceVector.y = (other.center.y - other.sizeY / 2) - (center.y + sizeY / 2);
+                    distanceVector.y = (other.rect.center.y - other.rect.height / 2) - (rect.center.y + rect.height / 2);
                 }
-                else if (other.center.y < center.y) // bellow
+                else if (other.rect.center.y < rect.center.y) // bellow
                 {
-                    distanceVector.y = (center.y - sizeY / 2) - (other.center.y + other.sizeY / 2);
+                    distanceVector.y = (rect.center.y - rect.height / 2) - (other.rect.center.y + other.rect.height / 2);
                 }
                 else//same y, maybe left or right
                 {
                     distanceVector.y = 0;
                 }
-                int distance = (int)Mathf.Sqrt(Mathf.Pow(distanceVector.x, 2) + Mathf.Pow(distanceVector.y, 2));
+                
+                float distance = Mathf.Sqrt(Mathf.Pow(distanceVector.x, 2) + Mathf.Pow(distanceVector.y, 2));
                 //Debug.Log("Distance between rooms: " + distance);
                 return distance;
             }
