@@ -13,6 +13,7 @@ namespace PerlinNoise
         {
             NoiseMap,
             ColourMap,
+			Mesh,
         }
 
         public DrawMode drawMode;
@@ -60,10 +61,13 @@ namespace PerlinNoise
                 case DrawMode.NoiseMap:
                     display.DrawTexture(TextureGenerator.TextureFromHeightMap(noiseMap));
                     break;
-                case DrawMode.ColourMap:
-                    display.DrawTexture(TextureGenerator.TextureFromColorMap(colourMap, mapWidth, mapHeight));
-                    break;
-                default:
+				case DrawMode.ColourMap:
+					display.DrawTexture(TextureGenerator.TextureFromColorMap(colourMap, mapWidth, mapHeight));
+					break;
+				case DrawMode.Mesh:
+					display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap), TextureGenerator.TextureFromColorMap(colourMap, mapWidth, mapHeight));
+					break;
+				default:
                     break;
             }
         }
