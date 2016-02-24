@@ -17,22 +17,48 @@ namespace BSPTree
 			gridHeight = _height;
 
 			grid = new int[gridWidth, gridHeight];
-			/*
-			for (int i = 0; i < gridWidth; i++){
-				for (int j= 0; j < gridHeight; j++){
-					grid[i,j] = 0;
-				}
-			}*/
 		}
 
-		public void setTile(int _x, int _y, int _value)
+		public void SetTile(int x, int y, int value)
 		{
-			grid[_x, _y] = _value;
+			if(x <= 0 || x >= gridWidth-1 || y <= 0 || y >= gridHeight-1)
+			{
+				return;
+			}
+
+			try
+			{
+				grid[x, y] = value;
+
+			}
+			catch (System.Exception ex)
+			{
+				Debug.Log("Exception: " + ex.Message);
+				Debug.Log("StackTrace: " + ex.StackTrace);
+				Debug.Log("x = " + x + "|y = " + y);
+			}
 		}
 
-		public int getTile(int _x, int _y)
+		public int GetTile(int x, int y)
 		{
-			return grid[_x, _y];
+			int returnValue = 0;
+			if (x <= 0 || x >= gridWidth - 1 || y <= 0 || y >= gridHeight - 1)
+			{
+				return 0;
+			}
+			try
+			{
+				returnValue = grid[x, y];
+
+			}
+			catch (System.Exception ex)
+			{
+				Debug.Log("Exception: " + ex.Message);
+				Debug.Log("StackTrace: " + ex.StackTrace);
+				Debug.Log("x = " + x + "|y = " + y);
+			}
+
+			return returnValue;
 		}
 
 		public int Width()

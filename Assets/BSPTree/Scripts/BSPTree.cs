@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace BSPTree
 {
@@ -8,13 +9,19 @@ namespace BSPTree
 		public int dungeonWidth = 150;
 		public int dungeonHeight = 150;
 		public string seed = "0";
+		public int wallSize = 1;
 		public BSPNode parentNode;
-
+		//public int roomSize = 10;
+		public bool fillWalls = true;
+		public bool sanitizeLevel = true;
+		public int minRoomSize = 10;
 		public static Grid levelGrid;
 
 		private int roomID = 0;
 		private System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 		public static System.Random prng;
+
+		public static List<GameObject> objectsToSanitize = new List<GameObject>();
 
 		public static float MyRandomRange(float min, float max)
 		{
@@ -32,36 +39,32 @@ namespace BSPTree
 			Debug.Log("Stopwatch started");
 			prng = new System.Random(seed.GetHashCode());
 			GameObject startCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-			startCube.transform.localScale = new Vector3(dungeonWidth, 1, dungeonHeight);
+			objectsToSanitize.Add(startCube);
+			startCube.transform.localScale = new Vector3(dungeonWidth, dungeonHeight, 1);
 			startCube.tag = "GenSection";
-			startCube.transform.position = new Vector3(transform.position.x + startCube.transform.localScale.x / 2,
-				transform.position.y,
-				transform.position.z + startCube.transform.localScale.z / 2);
+			startCube.transform.position = new Vector3(
+				transform.position.x + startCube.transform.localScale.x / 2,
+				transform.position.y + startCube.transform.localScale.y / 2,
+				transform.position.z);
 
-			levelGrid = new Grid((int)startCube.transform.localScale.x, (int)startCube.transform.localScale.z);
-			/*//unnecessary
-			for (int i = 0; i < levelGrid.Width(); i++){
-				for (int j = 0; j < levelGrid.Height(); j++){
-					levelGrid.setTile(i,j,0);		
-				}
-			}*/
-
-			parentNode = new BSPNode();
-			parentNode.setCube(startCube);
+			levelGrid = new Grid(dungeonWidth, dungeonHeight);
+			
+			parentNode = new BSPNode(minRoomSize);
+			parentNode.SetCube(startCube);
 
 
 			for (int i = 0; i < 7; i++)
 			{
-				split(parentNode);
+				Split(parentNode);
 			}
 			Debug.Log("BSP finished: " + sw.Elapsed.ToString());
 
 			//create the rooms
-			createRooms(parentNode);
+			CreateRooms(parentNode);
 			Debug.Log("Rooms created: " + sw.Elapsed.ToString());
 
 			//connect the rooms
-			connectRooms(parentNode);
+			ConnectRooms(parentNode);
 			Debug.Log("Rooms connected: " + sw.Elapsed.ToString());
 
 			//tidy up dungeon
@@ -72,173 +75,206 @@ namespace BSPTree
 				{
 					for (int j = 0; j < levelGrid.Height(); j++)
 					{
-						removeSingles(i, j);
+						RemoveSingles(i, j);
 					}
 				}
 			}
 			Debug.Log("Dungeon cleaned: " + sw.Elapsed.ToString());
 
-			createLevel();
+			CreateLevel();
 			Debug.Log("Level created: " + sw.Elapsed.ToString());
 		}
 
 		//split the tree
-		public void split(BSPNode _aNode)
+		public void Split(BSPNode aNode)
 		{
-			if (_aNode.getLeftNode() != null)
+			if (aNode.GetLeftNode() != null)
 			{
-				split(_aNode.getLeftNode());
+				Split(aNode.GetLeftNode());
 			}
 			else {
-				_aNode.cut();
+				aNode.Cut();
 				return;
 			}
 
-			if (_aNode.getLeftNode() != null)
+			if (aNode.GetLeftNode() != null)
 			{
-				split(_aNode.getRightNode());
+				Split(aNode.GetRightNode());
 			}
 
 		}
 
-		public static Grid getGrid()
+		public static Grid GetGrid()
 		{
 			return levelGrid;
 		}
 
-		public static void setTile(int _x, int _y, int _value)
+		public static void SetTile(int _x, int _y, int _value)
 		{
-			levelGrid.setTile(_x, _y, _value);
+			levelGrid.SetTile(_x, _y, _value);
 		}
 
-		private void addRoom(BSPNode _aNode)
+		private void AddRoom(BSPNode aNode)
 		{
 
-			GameObject aObj = _aNode.getCube();
+			GameObject aObj = aNode.GetCube();
 
 			GameObject aRoom = (GameObject)Instantiate(Resources.Load("BaseRoom"), aObj.transform.position, Quaternion.identity);
+			objectsToSanitize.Add(aRoom);
 			aRoom.transform.localScale = new Vector3(
-				(int)(MyRandomRange(10, aObj.transform.localScale.x - 5)),
-				aRoom.transform.localScale.y,
-				(int)(MyRandomRange(10, aObj.transform.localScale.z - 5)));
-			aRoom.GetComponent<RoomCreator>().setup();
-			aRoom.GetComponent<RoomCreator>().setID(roomID);
-			aRoom.GetComponent<RoomCreator>().setParentNode(_aNode);
-			_aNode.setRoom(aRoom);
+				(int)(MyRandomRange(minRoomSize, aObj.transform.localScale.x - minRoomSize/2)),
+				(int)(MyRandomRange(minRoomSize, aObj.transform.localScale.y - minRoomSize/2)),
+				aRoom.transform.localScale.z);
+			aRoom.GetComponent<RoomCreator>().Setup(wallSize);
+			aRoom.GetComponent<RoomCreator>().SetID(roomID);
+			aRoom.GetComponent<RoomCreator>().SetParentNode(aNode);
+			aNode.SetRoom(aRoom);
 			roomID++;
 		}
 
-		private void createRooms(BSPNode _aNode)
+		private void CreateRooms(BSPNode aNode)
 		{
-			if (_aNode.getLeftNode() != null)
+			if (aNode.GetLeftNode() != null)
 			{
-				createRooms(_aNode.getLeftNode());
+				CreateRooms(aNode.GetLeftNode());
 			}
 			else {
-				addRoom(_aNode);
+				AddRoom(aNode);
 				return;
 			}
 
-			if (_aNode.getRightNode() != null)
+			if (aNode.GetRightNode() != null)
 			{
-				createRooms(_aNode.getRightNode());
+				CreateRooms(aNode.GetRightNode());
 			}
 		}
 
-		private void connectRooms(BSPNode _aNode)
+		private void ConnectRooms(BSPNode aNode)
 		{
-			if (_aNode.getLeftNode() != null)
+			if (aNode.GetLeftNode() != null)
 			{
-				connectRooms(_aNode.getLeftNode());
+				ConnectRooms(aNode.GetLeftNode());
 
-				if (_aNode.getRoom() != null)
+				if (aNode.GetRoom() != null)
 				{
-					_aNode.getRoom().GetComponent<RoomCreator>().connect();
+					aNode.GetRoom().GetComponent<RoomCreator>().Connect();
 
 					return;
 				}
 
 			}
 			else {
-				if (_aNode.getRoom() != null)
+				if (aNode.GetRoom() != null)
 				{
-					_aNode.getRoom().GetComponent<RoomCreator>().connect();
+					aNode.GetRoom().GetComponent<RoomCreator>().Connect();
 
 					return;
 				}
 			}
 
-			if (_aNode.getRightNode() != null)
+			if (aNode.GetRightNode() != null)
 			{
-				connectRooms(_aNode.getRightNode());
+				ConnectRooms(aNode.GetRightNode());
 
-				if (_aNode.getRoom() != null)
+				if (aNode.GetRoom() != null)
 				{
-					_aNode.getRoom().GetComponent<RoomCreator>().connect();
+					aNode.GetRoom().GetComponent<RoomCreator>().Connect();
 
 					return;
 				}
 			}
 			else {
-				if (_aNode.getRoom() != null)
+				if (aNode.GetRoom() != null)
 				{
-					_aNode.getRoom().GetComponent<RoomCreator>().connect();
+					aNode.GetRoom().GetComponent<RoomCreator>().Connect();
 
 					return;
 				}
 			}
-
 		}
 
-		private void createLevel()
+		private void CreateLevel()
 		{
+			if (sanitizeLevel)
+			{
+				foreach (var go in objectsToSanitize)
+				{
+					Destroy(go);
+				}
+			}
+			objectsToSanitize.Clear();
+
+			GameObject levelRoot = new GameObject();
+			levelRoot.name = "LevelRoot";
+			levelRoot.transform.position = Vector3.zero;
+
 			for (int i = 0; i < levelGrid.Width(); i++)
 			{
 				for (int j = 0; j < levelGrid.Height(); j++)
 				{
-
-					switch (levelGrid.getTile(i, j))
+					string tileToLoad = "";
+					switch (levelGrid.GetTile(i, j))
 					{
+						case 0:
+							if (fillWalls)
+							{
+								tileToLoad = "WallTile";
+							}
+							break;
 						case 1:
-							Instantiate(Resources.Load("FloorTile"), new Vector3(transform.position.x - (transform.localScale.x / 2) + i, transform.position.y + transform.localScale.y / 2, transform.position.z - (transform.localScale.z / 2) + j), Quaternion.identity);
+							tileToLoad = "FloorTile";
 							break;
 						case 2:
-							Instantiate(Resources.Load("WallTile"), new Vector3(transform.position.x - (transform.localScale.x / 2) + i, transform.position.y + transform.localScale.y / 2, transform.position.z - (transform.localScale.z / 2) + j), Quaternion.identity);
+							tileToLoad = "WallTile";
 							break;
 					}
-
+					if (tileToLoad != "")
+					{
+						GameObject go = (GameObject)Instantiate(
+									Resources.Load(tileToLoad),
+									new Vector3(
+										transform.position.x - (transform.localScale.x / 2) + i,
+										transform.position.y - (transform.localScale.y / 2) + j,
+										transform.position.z + transform.localScale.z / 2),
+									Quaternion.identity);
+						go.transform.parent = levelRoot.transform;
+					}
 				}
+			}
+			if (!sanitizeLevel)
+			{
+				levelRoot.SetActive(false);
 			}
 		}
 
 		//cellular automota rules for cleanup stage
-		private void removeSingles(int _x, int _y)
+		private void RemoveSingles(int x, int y)
 		{
 			int count = 0;
 
-			if (_x < levelGrid.Width() - 1 && _x > 1 && _y > 1 && _y < levelGrid.Height() - 1)
+			if (x < levelGrid.Width() - 1 && x > 1 && y > 1 && y < levelGrid.Height() - 1)
 			{
-				if (levelGrid.getTile(_x + 1, _y) == 1)
+				if (levelGrid.GetTile(x + 1, y) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x - 1, _y) == 0)
+				if (levelGrid.GetTile(x - 1, y) == 0)
 				{
 					return;
 				}
 
-				if (levelGrid.getTile(_x + 1, _y) == 0)
+				if (levelGrid.GetTile(x + 1, y) == 0)
 				{
 					return;
 				}
 
-				if (levelGrid.getTile(_x, _y + 1) == 0)
+				if (levelGrid.GetTile(x, y + 1) == 0)
 				{
 					return;
 				}
 
-				if (levelGrid.getTile(_x, _y - 1) == 0)
+				if (levelGrid.GetTile(x, y - 1) == 0)
 				{
 					return;
 				}
@@ -246,53 +282,51 @@ namespace BSPTree
 
 				//
 
-				if (levelGrid.getTile(_x - 1, _y) == 1)
+				if (levelGrid.GetTile(x - 1, y) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x, _y + 1) == 1)
+				if (levelGrid.GetTile(x, y + 1) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x, _y - 1) == 1)
+				if (levelGrid.GetTile(x, y - 1) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x - 1, _y) == 1)
+				if (levelGrid.GetTile(x - 1, y) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x - 1, _y - 1) == 1)
+				if (levelGrid.GetTile(x - 1, y - 1) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x + 1, _y - 1) == 1)
+				if (levelGrid.GetTile(x + 1, y - 1) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x - 1, _y + 1) == 1)
+				if (levelGrid.GetTile(x - 1, y + 1) == 1)
 				{
 					count++;
 				}
 
-				if (levelGrid.getTile(_x + 1, _y + 1) == 1)
+				if (levelGrid.GetTile(x + 1, y + 1) == 1)
 				{
 					count++;
 				}
 
 				if (count >= 5)
 				{
-					levelGrid.setTile(_x, _y, 1);
+					levelGrid.SetTile(x, y, 1);
 				}
 			}
-
 		}
-
 	}
 }

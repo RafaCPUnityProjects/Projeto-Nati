@@ -8,36 +8,33 @@ namespace BSPTree
 	{
 
 		private Vector3 targetPos;
+		private int wallSize;
 
-		// Use this for initialization
-		void Start()
-		{
-
-		}
-
-		public void begin(Vector3 _targetPos)
+		public void Begin(Vector3 _targetPos, int wallSize)
 		{
 			targetPos = _targetPos;
+			this.wallSize = wallSize;
+			BSPTree.objectsToSanitize.Add(this.gameObject);
 
-			dig();
+			Dig();
 		}
 
-		private void updateTile()
+		private void UpdateTile()
 		{
-			BSPTree.setTile((int)transform.position.x, (int)transform.position.z, 1);
-			BSPTree.setTile((int)transform.position.x + 1, (int)transform.position.z, 1);
-			BSPTree.setTile((int)transform.position.x - 1, (int)transform.position.z, 1);
-			BSPTree.setTile((int)transform.position.x, (int)transform.position.z + 1, 1);
-			BSPTree.setTile((int)transform.position.x, (int)transform.position.z - 1, 1);
+			BSPTree.SetTile((int)transform.position.x, (int)transform.position.y, 1);
+			BSPTree.SetTile((int)transform.position.x + 1, (int)transform.position.y, 1);
+			BSPTree.SetTile((int)transform.position.x - 1, (int)transform.position.y, 1);
+			BSPTree.SetTile((int)transform.position.x, (int)transform.position.y + 1, 1);
+			BSPTree.SetTile((int)transform.position.x, (int)transform.position.y - 1, 1);
 
-			surroundTilesWithWall((int)transform.position.x + 1, (int)transform.position.z);
-			surroundTilesWithWall((int)transform.position.x - 1, (int)transform.position.z);
-			surroundTilesWithWall((int)transform.position.x, (int)transform.position.z + 1);
-			surroundTilesWithWall((int)transform.position.x, (int)transform.position.z - 1);
+			SurroundTilesWithWall((int)transform.position.x + 1, (int)transform.position.y);
+			SurroundTilesWithWall((int)transform.position.x - 1, (int)transform.position.y);
+			SurroundTilesWithWall((int)transform.position.x, (int)transform.position.y + 1);
+			SurroundTilesWithWall((int)transform.position.x, (int)transform.position.y - 1);
 
 		}
 
-		public void dig()
+		public void Dig()
 		{
 
 			while (transform.position.x != targetPos.x)
@@ -47,51 +44,64 @@ namespace BSPTree
 				{
 					transform.position = new Vector3(transform.position.x + 1, transform.position.y, transform.position.z);
 				}
-				else {
+				else
+				{
 					transform.position = new Vector3(transform.position.x - 1, transform.position.y, transform.position.z);
 				}
 
-				updateTile();
+				UpdateTile();
 			}
 
-			while (transform.position.z != targetPos.z)
+			while (transform.position.y != targetPos.y)
 			{
-				if (transform.position.z < targetPos.z)
+				if (transform.position.y < targetPos.y)
 				{
-					transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + 1);
+					transform.position = new Vector3(transform.position.x, transform.position.y + 1, transform.position.z);
 				}
-				else {
-					transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z - 1);
+				else
+				{
+					transform.position = new Vector3(transform.position.x, transform.position.y - 1, transform.position.z);
 				}
 
-				updateTile();
+				UpdateTile();
 			}
 
 			DestroyImmediate(this);
 		}
 
-		public void surroundTilesWithWall(int _x, int _y)
+		public void SurroundTilesWithWall(int x, int y)
 		{
-			if (BSPTree.getGrid().getTile(_x + 1, _y) == 0)
+			//Dir dir = new Dir(1, 0);
+			for (int i = -wallSize; i <= wallSize; i++)
 			{
-				BSPTree.setTile(_x + 1, _y, 2);
-			}
-
-			if (BSPTree.getGrid().getTile(_x - 1, _y) == 0)
-			{
-				BSPTree.setTile(_x - 1, _y, 2);
-			}
-
-			if (BSPTree.getGrid().getTile(_x, _y + 1) == 0)
-			{
-				BSPTree.setTile(_x, _y + 1, 2);
-			}
-
-			if (BSPTree.getGrid().getTile(_x, _y - 1) == 0)
-			{
-				BSPTree.setTile(_x, _y - 1, 2);
+				for (int j = -wallSize; j <= wallSize; j++)
+				{
+					if (i != 0 && j != 0)
+					{
+						SetTileDir(x, y, new Dir(i, j));
+					}
+				}
 			}
 		}
 
+		private static void SetTileDir(int x, int y, Dir dir)
+		{
+			if (BSPTree.GetGrid().GetTile(x + dir.x, y + dir.y) == 0)
+			{
+				BSPTree.SetTile(x + dir.x, y + dir.y, 2);
+			}
+		}
+
+		public struct Dir
+		{
+			public int x;
+			public int y;
+
+			public Dir(int x, int y)
+			{
+				this.x = x;
+				this.y = y;
+			}
+		}
 	}
 }

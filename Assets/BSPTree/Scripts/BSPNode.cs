@@ -5,6 +5,7 @@ namespace BSPTree
 {
 	public class BSPNode
 	{
+		private int minRoomSize;
 		GameObject cube;
 		BSPNode parentNode;
 		BSPNode leftNode;
@@ -14,156 +15,174 @@ namespace BSPTree
 		private bool isConnected = false;
 		GameObject room;
 
-		public BSPNode()
+		public BSPNode(int minRoomSize)
 		{
-			myColor = new Color(BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f));
+			this.minRoomSize = minRoomSize;
+			myColor = new Color(
+				BSPTree.MyRandomRange(0.0f, 1.0f), 
+				BSPTree.MyRandomRange(0.0f, 1.0f), 
+				BSPTree.MyRandomRange(0.0f, 1.0f));
 		}
 
-		public void setLeftNode(BSPNode _aNode)
+		public void SetLeftNode(BSPNode _aNode)
 		{
 			leftNode = _aNode;
 		}
 
-		public void setRightNode(BSPNode _aNode)
+		public void SetRightNode(BSPNode _aNode)
 		{
 			rightNode = _aNode;
 		}
 
-		public void setParentNode(BSPNode _aNode)
+		public void SetParentNode(BSPNode _aNode)
 		{
 			parentNode = _aNode;
 		}
 
-		public BSPNode getLeftNode()
+		public BSPNode GetLeftNode()
 		{
 			return leftNode;
 		}
 
-		public BSPNode getRightNode()
+		public BSPNode GetRightNode()
 		{
 			return rightNode;
 		}
 
-		public BSPNode getParentNode()
+		public BSPNode GetParentNode()
 		{
 			return parentNode;
 		}
 
-		void splitX(GameObject _aSection)
+		void SplitX(GameObject aSection)
 		{
+			float xSplit = BSPTree.MyRandomRange(minRoomSize, aSection.transform.localScale.x - minRoomSize);
 
-			float xSplit = BSPTree.MyRandomRange(20, _aSection.transform.localScale.x - 20);
-
-			if (xSplit > 20)
+			if (xSplit > minRoomSize)
 			{
 				GameObject cube0 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-				cube0.transform.localScale = new Vector3(xSplit, _aSection.transform.localScale.y, _aSection.transform.localScale.z);
+				cube0.transform.localScale = new Vector3(xSplit, aSection.transform.localScale.y, aSection.transform.localScale.z);
 				cube0.transform.position = new Vector3(
-					_aSection.transform.position.x - ((xSplit - _aSection.transform.localScale.x) / 2),
-					_aSection.transform.position.y,
-					_aSection.transform.position.z);
-				cube0.GetComponent<Renderer>().material.color = new Color(BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f));
+					aSection.transform.position.x - ((xSplit - aSection.transform.localScale.x) / 2),
+					aSection.transform.position.y,
+					aSection.transform.position.z);
+				cube0.GetComponent<Renderer>().material.color = new Color(
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f));
 				cube0.tag = "GenSection";
-				leftNode = new BSPNode();
-				leftNode.setCube(cube0);
-				leftNode.setParentNode(this);
+				BSPTree.objectsToSanitize.Add(cube0);
+				leftNode = new BSPNode(minRoomSize);
+				leftNode.SetCube(cube0);
+				leftNode.SetParentNode(this);
 
 				GameObject cube1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-				float split1 = _aSection.transform.localScale.x - xSplit;
-				cube1.transform.localScale = new Vector3(split1, _aSection.transform.localScale.y, _aSection.transform.localScale.z);
+				float split1 = aSection.transform.localScale.x - xSplit;
+				cube1.transform.localScale = new Vector3(split1, aSection.transform.localScale.y, aSection.transform.localScale.z);
 				cube1.transform.position = new Vector3(
-					_aSection.transform.position.x + ((split1 - _aSection.transform.localScale.x) / 2),
-					_aSection.transform.position.y,
-					_aSection.transform.position.z);
-				cube1.GetComponent<Renderer>().material.color = new Color(BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f));
+					aSection.transform.position.x + ((split1 - aSection.transform.localScale.x) / 2),
+					aSection.transform.position.y,
+					aSection.transform.position.z);
+				cube1.GetComponent<Renderer>().material.color = new Color(
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f));
 				cube1.tag = "GenSection";
-				rightNode = new BSPNode();
-				rightNode.setCube(cube1);
-				rightNode.setParentNode(this);
+				BSPTree.objectsToSanitize.Add(cube1);
+				rightNode = new BSPNode(minRoomSize);
+				rightNode.SetCube(cube1);
+				rightNode.SetParentNode(this);
 
-				GameObject.DestroyImmediate(_aSection);
+				GameObject.DestroyImmediate(aSection);
 			}
 		}
 
-		void splitZ(GameObject _aSection)
+		void SplitY(GameObject aSection)
 		{
-			float zSplit = BSPTree.MyRandomRange(20, _aSection.transform.localScale.z - 20);
-			float zSplit1 = _aSection.transform.localScale.z - zSplit;
+			float ySplit = BSPTree.MyRandomRange(minRoomSize, aSection.transform.localScale.y - minRoomSize);
+			float ySplit1 = aSection.transform.localScale.y - ySplit;
 
-			if (zSplit > 20)
+			if (ySplit > minRoomSize)
 			{
-
 				GameObject cube0 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-				cube0.transform.localScale = new Vector3(_aSection.transform.localScale.x, _aSection.transform.localScale.y, zSplit);
+				cube0.transform.localScale = new Vector3(aSection.transform.localScale.x, ySplit, aSection.transform.localScale.z);
 				cube0.transform.position = new Vector3(
-					_aSection.transform.position.x,
-					_aSection.transform.position.y,
-					_aSection.transform.position.z - ((zSplit - _aSection.transform.localScale.z) / 2));
-				cube0.GetComponent<Renderer>().material.color = new Color(BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f));
+					aSection.transform.position.x,
+					aSection.transform.position.y - ((ySplit - aSection.transform.localScale.y) / 2),
+					aSection.transform.position.z);
+				cube0.GetComponent<Renderer>().material.color = new Color(
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f));
 				cube0.tag = "GenSection";
-				leftNode = new BSPNode();
-				leftNode.setCube(cube0);
-				leftNode.setParentNode(this);
+				BSPTree.objectsToSanitize.Add(cube0);
+				leftNode = new BSPNode(minRoomSize);
+				leftNode.SetCube(cube0);
+				leftNode.SetParentNode(this);
 
 				GameObject cube1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-				cube1.transform.localScale = new Vector3(_aSection.transform.localScale.x, _aSection.transform.localScale.y, zSplit1);
+				cube1.transform.localScale = new Vector3(aSection.transform.localScale.x, ySplit1, aSection.transform.localScale.z);
 				cube1.transform.position = new Vector3(
-					_aSection.transform.position.x,
-					_aSection.transform.position.y,
-					_aSection.transform.position.z + ((zSplit1 - _aSection.transform.localScale.z) / 2));
-				cube1.GetComponent<Renderer>().material.color = new Color(BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f), BSPTree.MyRandomRange(0.0f, 1.0f));
+					aSection.transform.position.x,
+					aSection.transform.position.y + ((ySplit1 - aSection.transform.localScale.y) / 2),
+					aSection.transform.position.z);
+				cube1.GetComponent<Renderer>().material.color = new Color(
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f), 
+					BSPTree.MyRandomRange(0.0f, 1.0f));
 				cube1.tag = "GenSection";
-				rightNode = new BSPNode();
-				rightNode.setCube(cube1);
-				rightNode.setParentNode(this);
+				BSPTree.objectsToSanitize.Add(cube1);
+				rightNode = new BSPNode(minRoomSize);
+				rightNode.SetCube(cube1);
+				rightNode.SetParentNode(this);
 
-				GameObject.DestroyImmediate(_aSection);
+				GameObject.DestroyImmediate(aSection);
 			}
 		}
 
-		public void setCube(GameObject _aCube)
+		public void SetCube(GameObject _aCube)
 		{
 			cube = _aCube;
 		}
 
-		public GameObject getCube()
+		public GameObject GetCube()
 		{
 			return cube;
 		}
 
-		public void cut()
+		public void Cut()
 		{
-			float choice = BSPTree.MyRandomRange(0, 2);
+			float choice = BSPTree.MyRandomRange(0f, 1f);
 			if (choice <= 0.5)
 			{
-				splitX(cube);
+				SplitX(cube);
 			}
 			else {
-				splitZ(cube);
+				SplitY(cube);
 			}
 		}
 
-		public Color getColor()
+		public Color GetColor()
 		{
 			return myColor;
 		}
 
-		public void setRoom(GameObject _aRoom)
+		public void SetRoom(GameObject _aRoom)
 		{
 			room = _aRoom;
 		}
 
-		public GameObject getRoom()
+		public GameObject GetRoom()
 		{
 			return room;
 		}
 
-		public void setConnected()
+		public void SetConnected()
 		{
 			isConnected = true;
 		}
 
-		public bool getIsConnected()
+		public bool GetIsConnected()
 		{
 			return isConnected;
 		}

@@ -5,54 +5,55 @@ namespace BSPTree
 {
 	public class RoomCreator : MonoBehaviour
 	{
-
 		private int roomID;
 
 		private BSPNode parentNode;
 
 		private GameObject sibiling;
+		private int wallSize;
 
-		public void setup()
+		public void Setup(int wallSize)
 		{
+			this.wallSize = wallSize;
 			transform.position = new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z);
 
-			transform.position = new Vector3(transform.position.x - (transform.localScale.x / 2), transform.position.y, transform.position.z - (transform.localScale.z / 2));
+			transform.position = new Vector3(transform.position.x - (transform.localScale.x / 2), transform.position.y - (transform.localScale.y / 2), transform.position.z);
 
 			for (int i = (int)transform.position.x; i < (int)transform.position.x + transform.localScale.x; i++)
 			{
-				for (int j = (int)transform.position.z; j < (int)transform.position.z + transform.localScale.z; j++)
+				for (int j = (int)transform.position.y; j < (int)transform.position.y + transform.localScale.y; j++)
 				{
-					BSPTree.setTile(i, j, 1);
+					BSPTree.SetTile(i, j, 1);
 				}
 			}
 
 			for (int i = 0; i < transform.localScale.x + 1; i++)
 			{
-				BSPTree.setTile((int)transform.position.x + i, (int)transform.position.z, 2);
-				BSPTree.setTile((int)transform.position.x + i, (int)(transform.position.z + transform.localScale.z), 2);
+				BSPTree.SetTile((int)transform.position.x + i, (int)transform.position.y, 2);
+				BSPTree.SetTile((int)transform.position.x + i, (int)(transform.position.y + transform.localScale.y), 2);
 			}
 
-			for (int i = 0; i < transform.localScale.z + 1; i++)
+			for (int i = 0; i < transform.localScale.y + 1; i++)
 			{
-				BSPTree.setTile((int)transform.position.x, (int)transform.position.z + i, 2);
-				BSPTree.setTile((int)(transform.position.x + transform.localScale.x), (int)transform.position.z + i, 2);
+				BSPTree.SetTile((int)transform.position.x, (int)transform.position.y + i, 2);
+				BSPTree.SetTile((int)(transform.position.x + transform.localScale.x), (int)transform.position.y + i, 2);
 			}
 
 		}
 
-		public void setID(int _aID)
+		public void SetID(int _aID)
 		{
 			roomID = _aID;
 		}
 
-		public void setParentNode(BSPNode _aNode)
+		public void SetParentNode(BSPNode _aNode)
 		{
 			parentNode = _aNode;
 		}
 
-		public void connect()
+		public void Connect()
 		{
-			getSibiling();
+			GetSibiling();
 
 			if (sibiling != null)
 			{
@@ -60,33 +61,33 @@ namespace BSPTree
 				Vector3 startPos = new Vector3();
 				Vector3 endPos = new Vector3();
 
-				if (sibiling.transform.position.z + sibiling.transform.localScale.z < transform.position.z)
+				if (sibiling.transform.position.y + sibiling.transform.localScale.y < transform.position.y)
 				{
-					startPos = chooseDoorPoint(0);
-					endPos = sibiling.GetComponent<RoomCreator>().chooseDoorPoint(2);
+					startPos = ChooseDoorPoint(0);
+					endPos = sibiling.GetComponent<RoomCreator>().ChooseDoorPoint(2);
 				}
-				else if (sibiling.transform.position.z > transform.position.z + transform.localScale.z)
+				else if (sibiling.transform.position.y > transform.position.y + transform.localScale.y)
 				{
-					startPos = chooseDoorPoint(2);
-					endPos = sibiling.GetComponent<RoomCreator>().chooseDoorPoint(1);
+					startPos = ChooseDoorPoint(2);
+					endPos = sibiling.GetComponent<RoomCreator>().ChooseDoorPoint(1);
 				}
 				else if (sibiling.transform.position.x + sibiling.transform.localScale.x < transform.position.x)
 				{
-					startPos = chooseDoorPoint(3);
-					endPos = sibiling.GetComponent<RoomCreator>().chooseDoorPoint(1);
+					startPos = ChooseDoorPoint(3);
+					endPos = sibiling.GetComponent<RoomCreator>().ChooseDoorPoint(1);
 				}
 				else if (sibiling.transform.position.x > transform.position.x + transform.localScale.x)
 				{
-					startPos = chooseDoorPoint(1);
-					endPos = sibiling.GetComponent<RoomCreator>().chooseDoorPoint(3);
+					startPos = ChooseDoorPoint(1);
+					endPos = sibiling.GetComponent<RoomCreator>().ChooseDoorPoint(3);
 				}
 
 
 				GameObject aDigger = (GameObject)Instantiate(Resources.Load("Digger"), startPos, Quaternion.identity);
-				aDigger.GetComponent<Digger>().begin(endPos);
+				aDigger.GetComponent<Digger>().Begin(endPos, wallSize);
 
 
-				parentNode = findRoomlessParent(parentNode);
+				parentNode = FindRoomlessParent(parentNode);
 
 				if (parentNode != null)
 				{
@@ -95,66 +96,78 @@ namespace BSPTree
 
 					if (aC == 0)
 					{
-						parentNode.setRoom(this.gameObject);
+						parentNode.SetRoom(this.gameObject);
 					}
 					else
 					{
-						parentNode.setRoom(sibiling.gameObject);
+						parentNode.SetRoom(sibiling.gameObject);
 					}
 
-					sibiling.GetComponent<RoomCreator>().setParentNode(parentNode);
+					sibiling.GetComponent<RoomCreator>().SetParentNode(parentNode);
 				}
 
 			}
 
 		}
 
-		private void getSibiling()
+		private void GetSibiling()
 		{
-			if (parentNode.getParentNode() != null)
+			if (parentNode.GetParentNode() != null)
 			{
-				if (parentNode.getParentNode().getLeftNode() != parentNode)
+				if (parentNode.GetParentNode().GetLeftNode() != parentNode)
 				{
-					sibiling = parentNode.getParentNode().getLeftNode().getRoom();
+					sibiling = parentNode.GetParentNode().GetLeftNode().GetRoom();
 				}
 				else {
-					sibiling = parentNode.getParentNode().getRightNode().getRoom();
+					sibiling = parentNode.GetParentNode().GetRightNode().GetRoom();
 				}
 			}
 		}
 
-		public Vector3 chooseDoorPoint(int _index)
+		public Vector3 ChooseDoorPoint(int index)
 		{
-			switch (_index)
+			switch (index)
 			{
 				case 0:
-					return new Vector3((int)(transform.position.x + BSPTree.MyRandomRange(1, transform.localScale.x - 2)), transform.position.y, (int)(transform.position.z));
+					return new Vector3(
+						(int)(transform.position.x + BSPTree.MyRandomRange(1, transform.localScale.x - 2)),
+						(int)(transform.position.y),
+						transform.position.z);
 				case 1:
-					return new Vector3((int)(transform.position.x + transform.localScale.x), transform.position.y, (int)(transform.position.z + BSPTree.MyRandomRange(1, transform.localScale.z - 2)));
+					return new Vector3(
+						(int)(transform.position.x + transform.localScale.x),
+						(int)(transform.position.y + BSPTree.MyRandomRange(1, transform.localScale.y - 2)),
+						transform.position.z);
 				case 2:
-					return new Vector3((int)(transform.position.x + BSPTree.MyRandomRange(1, transform.localScale.x - 2)), transform.position.y, (int)(transform.position.z + transform.localScale.z));
+					return new Vector3(
+						(int)(transform.position.x + BSPTree.MyRandomRange(1, transform.localScale.x - 2)),
+						(int)(transform.position.y + transform.localScale.y),
+						transform.position.z);
 				case 3:
-					return new Vector3((int)(transform.position.x + 1), transform.position.y, (int)(transform.position.z + BSPTree.MyRandomRange(1, transform.localScale.z - 2)));
+					return new Vector3(
+						(int)(transform.position.x + 1),
+						(int)(transform.position.y + BSPTree.MyRandomRange(1, transform.localScale.y - 2)),
+						transform.position.z);
 				default:
 					return new Vector3(0, 0, 0);
 			}
 		}
 
-		public BSPNode getParent()
+		public BSPNode GetParent()
 		{
 			return parentNode;
 		}
 
-		public BSPNode findRoomlessParent(BSPNode _aNode)
+		public BSPNode FindRoomlessParent(BSPNode _aNode)
 		{
 			if (_aNode != null)
 			{
-				if (_aNode.getRoom() == null)
+				if (_aNode.GetRoom() == null)
 				{
 					return _aNode;
 				}
 				else {
-					return findRoomlessParent(_aNode.getParentNode());
+					return FindRoomlessParent(_aNode.GetParentNode());
 				}
 			}
 
