@@ -156,49 +156,62 @@ namespace Retroboy
 		{
 			VecInt centerA = new VecInt(roomA.roomSpace.center);
 			VecInt centerB = new VecInt(roomB.roomSpace.center);
+
 			int xDist = Mathf.Abs(centerB.x - centerA.x);
 			int yDist = Mathf.Abs(centerB.y - centerA.y);
 
-			for (int x = centerA.x; x <= centerB.x; x++)
+			int xStart, xEnd, yStart, yEnd;
+
+			if (centerA.x <= centerB.x)
 			{
-				SetTile(x, centerA.y, 2);
-				SetTile(x, centerA.y + 1, 2);
+				xStart = centerA.x;
+				xEnd = centerB.x;
+			}
+			else
+			{
+				xStart = centerB.x;
+				xEnd = centerA.x;
 			}
 
-			for (int y = centerA.y; y <= centerB.y; y++)
+			if (centerA.y <= centerB.y)
 			{
-				SetTile(centerB.x, y, 2);
-				SetTile(centerB.x + 1, y, 2);
+				yStart = centerA.y;
+				yEnd = centerB.y;
+			}
+			else
+			{
+				yStart = centerB.y;
+				yEnd = centerA.y;
 			}
 
-			//if (Mathf.Abs(centerB.x - centerA.x) < Mathf.Abs(centerB.y - centerA.y))
-			//{
-			//	for (int x = centerA.x; x <= centerB.x; x++)
-			//	{
-			//		SetTile(x, centerA.y, 2);
-			//		SetTile(x, centerA.y + 1, 2);
-			//	}
+			if (xDist <= yDist)
+			{
+				for (int x = xStart; x <= xEnd; x++)
+				{
+					SetTile(x, yStart, 2);
+					SetTile(x, yStart + 1, 2);
+				}
 
-			//	for (int y = centerA.y; y <= centerB.y; y++)
-			//	{
-			//		SetTile(centerB.x, y, 2);
-			//		SetTile(centerB.x + 1, y, 2);
-			//	}
-			//}
-			//else
-			//{
-			//	for (int y = centerA.y; y <= centerB.y; y++)
-			//	{
-			//		SetTile(centerA.x, y, 2);
-			//		SetTile(centerA.x + 1, y, 2);
-			//	}
+				for (int y = yStart; y <= yEnd; y++)
+				{
+					SetTile(xEnd, y, 2);
+					SetTile(xEnd + 1, y, 2);
+				}
+			}
+			else
+			{
+				for (int y = yStart; y <= yEnd; y++)
+				{
+					SetTile(xStart, y, 2);
+					SetTile(xStart + 1, y, 2);
+				}
 
-			//	for (int x = centerA.x; x <= centerB.x; x++)
-			//	{
-			//		SetTile(x, centerB.y, 2);
-			//		SetTile(x, centerB.y + 1, 2);
-			//	}
-			//}
+				for (int x = xStart; x <= xEnd; x++)
+				{
+					SetTile(x, yEnd, 2);
+					SetTile(x, yEnd + 1, 2);
+				}
+			}
 		}
 
 		bool InBoundaries(VecInt pos)
@@ -215,7 +228,7 @@ namespace Retroboy
 					if (i != j) //dont look at the same room
 					{
 						float distance = Vector2.Distance(allRooms[i].roomSpace.center, allRooms[j].roomSpace.center);
-						allRooms[i].roomDistances.Add(new RoomDistance(allRooms[j],distance));
+						allRooms[i].roomDistances.Add(new RoomDistance(allRooms[j], distance));
 					}
 				}
 			}
@@ -371,7 +384,7 @@ namespace Retroboy
 		{
 			roomDistances.Add(new RoomDistance(otherRoom, distance));
 			roomDistances.Sort();
-			color = otherRoom.color;
+			color = roomDistances[0].room.color;
 		}
 
 		public bool IsConnected(Room otherRoom)
