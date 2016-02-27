@@ -15,6 +15,7 @@ namespace Retroboy
 		//map stuff
 		public int mapWidth = 100;
 		public int mapHeight = 100;
+		public bool sanitize = true;
 		//room stuff
 		public int roomTries = 100;
 		public VecInt roomXVariance = new VecInt(5, 7);
@@ -62,12 +63,117 @@ namespace Retroboy
 			ConnectRooms();
 			print("Rooms connected: " + sw.Elapsed.ToString());
 
+			//sanitize map
+			if(sanitize)
+				Sanitize();
+			print("Map sanitized: " + sw.Elapsed.ToString());
+
 			//print result
 			PrintMap();
 			print("Map Printed: " + sw.Elapsed.ToString());
 
 			//stop stopwatch
 			sw.Stop();
+		}
+
+		private void Sanitize()
+		{
+			List<VecInt> orthoDirections = new List<VecInt>();
+			orthoDirections.Add(Direction.N);
+			orthoDirections.Add(Direction.S);
+			orthoDirections.Add(Direction.E);
+			orthoDirections.Add(Direction.W);
+
+			List<VecInt> diagonalDirections = new List<VecInt>();
+			diagonalDirections.Add(Direction.NE);
+			diagonalDirections.Add(Direction.NW);
+			diagonalDirections.Add(Direction.SE);
+			diagonalDirections.Add(Direction.SW);
+
+			for (int y = 1; y < mapHeight - 1; y++)
+			{
+				for (int x = 1; x < mapWidth - 1; x++)
+				{
+					if (GetTile(x, y) == 0) //empty tile
+					{
+						int surroundingFloors = 0;
+						foreach (var ortho in orthoDirections)
+						{
+							if (GetTile(x + ortho.x, y + ortho.y) == 2)
+							{
+								surroundingFloors++;
+							}
+						}
+						foreach (var diagonal in diagonalDirections)
+						{
+							if (GetTile(x + diagonal.x, y + diagonal.y) == 2)
+							{
+								surroundingFloors++;
+							}
+						}
+						if (surroundingFloors >= 6) //floor this tile
+						{
+							SetTile(x, y, 2);
+						}
+						else if (surroundingFloors == 5) //concave
+						{
+							SetTile(x, y, 1);
+						}
+						else if (surroundingFloors == 4)
+						{
+							SetTile(x, y, 1);
+						}
+						else if (surroundingFloors == 3 || surroundingFloors == 2) //normal wall
+						{
+							SetTile(x, y, 1);
+						}
+						else if (surroundingFloors == 1) //convex
+						{
+							SetTile(x, y, 1);
+						}
+					}
+				}
+			}
+			//for (int y = 1; y < mapHeight - 1; y++)
+			//{
+			//	for (int x = 1; x < mapWidth - 1; x++)
+			//	{
+			//		if (GetTile(x, y) == 0) //empty tile
+			//		{
+			//			int surroundingWalls = 0;
+			//			foreach (var ortho in orthoDirections)
+			//			{
+			//				if (GetTile(x + ortho.x, y + ortho.y) == 1)
+			//				{
+			//					surroundingWalls++;
+			//				}
+			//			}
+			//			foreach (var diagonal in diagonalDirections)
+			//			{
+			//				if (GetTile(x + diagonal.x, y + diagonal.y) == 1)
+			//				{
+			//					surroundingWalls++;
+			//				}
+			//			}
+			//			if (surroundingWalls == 5) //concave
+			//			{
+			//				SetTile(x, y, 1);
+			//			}
+			//			else if (surroundingWalls == 4)
+			//			{
+			//				SetTile(x, y, 1);
+			//			}
+			//			else if (surroundingWalls == 3 || surroundingWalls == 2) //normal wall
+			//			{
+			//				SetTile(x, y, 1);
+			//			}
+			//			else if (surroundingWalls == 1) //convex
+			//			{
+			//				SetTile(x, y, 1);
+			//			}
+			//		}
+			//	}
+			//}
 		}
 
 		void CreateRooms()
@@ -146,7 +252,10 @@ namespace Retroboy
 				{
 					if (allRooms[i].roomDistances[j].distance < roomConnectionTreshold)
 					{
-						ConnectRoomsWithCorridors(allRooms[i], allRooms[i].roomDistances[j].room);
+						if (!allRooms[i].connectedRooms.Contains(allRooms[i].roomDistances[j].room))
+						{
+							ConnectRoomsWithCorridors(allRooms[i], allRooms[i].roomDistances[j].room);
+						}
 					}
 				}
 			}
@@ -154,62 +263,91 @@ namespace Retroboy
 
 		void ConnectRoomsWithCorridors(Room roomA, Room roomB)
 		{
+			roomA.connectedRooms.Add(roomB);
+			roomB.connectedRooms.Add(roomA);
+
 			VecInt centerA = new VecInt(roomA.roomSpace.center);
 			VecInt centerB = new VecInt(roomB.roomSpace.center);
 
-			int xDist = Mathf.Abs(centerB.x - centerA.x);
-			int yDist = Mathf.Abs(centerB.y - centerA.y);
-
-			int xStart, xEnd, yStart, yEnd;
-
-			if (centerA.x <= centerB.x)
+			if (Mathf.Abs(centerB.x - centerA.x) < Mathf.Abs(centerB.y - centerA.y))
 			{
-				xStart = centerA.x;
-				xEnd = centerB.x;
+				if (centerA.x < centerB.x)
+				{
+					//go right x++
+					for (int x = centerA.x; x <= centerB.x; x++)
+					{
+						SetTile(x, centerA.y, 2);
+						SetTile(x, centerA.y + 1, 2);
+					}
+				}
+				else
+				{
+					//go left x--
+					for (int x = centerA.x; x >= centerB.x; x--)
+					{
+						SetTile(x, centerA.y, 2);
+						SetTile(x, centerA.y + 1, 2);
+					}
+				}
+
+				if (centerA.y < centerB.y)
+				{
+					//go up y++
+					for (int y = centerA.y; y <= centerB.y; y++)
+					{
+						SetTile(centerB.x, y, 2);
+						SetTile(centerB.x + 1, y, 2);
+					}
+				}
+				else
+				{
+					//go down y--
+					for (int y = centerA.y; y >= centerB.y; y--)
+					{
+						SetTile(centerB.x, y, 2);
+						SetTile(centerB.x + 1, y, 2);
+					}
+				}
 			}
 			else
 			{
-				xStart = centerB.x;
-				xEnd = centerA.x;
-			}
 
-			if (centerA.y <= centerB.y)
-			{
-				yStart = centerA.y;
-				yEnd = centerB.y;
-			}
-			else
-			{
-				yStart = centerB.y;
-				yEnd = centerA.y;
-			}
-
-			if (xDist <= yDist)
-			{
-				for (int x = xStart; x <= xEnd; x++)
+				if (centerA.y < centerB.y)
 				{
-					SetTile(x, yStart, 2);
-					SetTile(x, yStart + 1, 2);
+					//go up y++
+					for (int y = centerA.y; y <= centerB.y; y++)
+					{
+						SetTile(centerA.x, y, 2);
+						SetTile(centerA.x + 1, y, 2);
+					}
+				}
+				else
+				{
+					//go down y--
+					for (int y = centerA.y; y >= centerB.y; y--)
+					{
+						SetTile(centerA.x, y, 2);
+						SetTile(centerA.x + 1, y, 2);
+					}
 				}
 
-				for (int y = yStart; y <= yEnd; y++)
+				if (centerA.x < centerB.x)
 				{
-					SetTile(xEnd, y, 2);
-					SetTile(xEnd + 1, y, 2);
+					//go right x++
+					for (int x = centerA.x; x <= centerB.x; x++)
+					{
+						SetTile(x, centerB.y, 2);
+						SetTile(x, centerB.y + 1, 2);
+					}
 				}
-			}
-			else
-			{
-				for (int y = yStart; y <= yEnd; y++)
+				else
 				{
-					SetTile(xStart, y, 2);
-					SetTile(xStart + 1, y, 2);
-				}
-
-				for (int x = xStart; x <= xEnd; x++)
-				{
-					SetTile(x, yEnd, 2);
-					SetTile(x, yEnd + 1, 2);
+					//go left x--
+					for (int x = centerA.x; x >= centerB.x; x--)
+					{
+						SetTile(x, centerB.y, 2);
+						SetTile(x, centerB.y + 1, 2);
+					}
 				}
 			}
 		}
@@ -438,5 +576,9 @@ namespace Retroboy
 		public static VecInt S = new VecInt(0, -1);
 		public static VecInt E = new VecInt(1, 0);
 		public static VecInt W = new VecInt(-1, 0);
+		public static VecInt NE = new VecInt(1, 1);
+		public static VecInt SW = new VecInt(-1, -1);
+		public static VecInt SE = new VecInt(1, -1);
+		public static VecInt NW = new VecInt(-1, 1);
 	}
 }

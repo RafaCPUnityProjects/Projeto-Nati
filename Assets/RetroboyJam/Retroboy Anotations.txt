@@ -1,0 +1,57 @@
+listar a distancia de todas as salas até todas as outras salas
+pra cada sala linkar a mais perto
+verificar se todas tem conexão com a sala principal
+se não, linkar regiões
+
+
+
+DUNGEON:
+Salas
+-dimensões
+-paredes
+-chão
+-coisas dentro da sala
+Corredores
+-portas
+-liga salas
+
+tiles:
+-reto dentro 1
+-reto fora 2
+-concavo ()dentro 3
+-concavo fora 4
+-convexo("esquina") dentro 5
+-convexo fora 6
+
+-chao x (mudar pra 10)
+
+
+single tile
+xxx
+xox
+xxx
+
+xxx
+ooo
+xxx
+
+2222226o
+1111152o
+xxxxx12o
+xxxxx12o
+
+x12ooooo
+x1422222
+x3111111
+xxxxxxxx
+
+xxxxxxxx
+11111111
+11111111
+xxxxxxxx
+
+xxxxxxxx
+11111111
+????????
+11111111
+xxxxxxxx
