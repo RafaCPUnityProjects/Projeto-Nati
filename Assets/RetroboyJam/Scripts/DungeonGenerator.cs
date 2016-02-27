@@ -23,6 +23,8 @@ namespace Retroboy
 		public int wallDepth = 2;
 		public int connectionsPerRoom = 3;
 		public float roomConnectionTreshold = 7f;
+		//corridor stuff
+		public int corridorSize = 2;
 		//print stuff
 		public GameObject[] tilePrefabs;
 		public Transform mapRootGO;
@@ -64,7 +66,7 @@ namespace Retroboy
 			print("Rooms connected: " + sw.Elapsed.ToString());
 
 			//sanitize map
-			if(sanitize)
+			if (sanitize)
 				Sanitize();
 			print("Map sanitized: " + sw.Elapsed.ToString());
 
@@ -268,86 +270,120 @@ namespace Retroboy
 
 			VecInt centerA = new VecInt(roomA.roomSpace.center);
 			VecInt centerB = new VecInt(roomB.roomSpace.center);
+			VecInt maxA = new VecInt(roomA.roomSpace.max);
+			VecInt maxB = new VecInt(roomB.roomSpace.max);
+			VecInt minA = new VecInt(roomA.roomSpace.min);
+			VecInt minB = new VecInt(roomB.roomSpace.min);
 
-			if (Mathf.Abs(centerB.x - centerA.x) < Mathf.Abs(centerB.y - centerA.y))
+			float deltaX = roomB.roomSpace.center.x - roomA.roomSpace.center.x;
+			float deltaY = roomB.roomSpace.center.y - roomA.roomSpace.center.y;
+
+			int xStart, yStart, xEnd, yEnd;
+			bool xFirst = Mathf.Abs(deltaX) <= Mathf.Abs(deltaY);
+			xStart = centerA.x;
+			yStart = centerA.y;
+			xEnd = centerB.x;
+			yEnd = centerB.y;
+
+			//if (xFirst)
+			//{
+			//	xStart = deltaX >= 0 ? maxA.x : minA.x;
+			//	yStart = centerA.y;
+			//	xEnd = centerB.x;
+			//	yEnd = deltaY >= 0 ? minB.y : maxB.y;
+			//}
+			//else
+			//{
+			//	xStart = centerA.x;
+			//	yStart = deltaY >= 0 ? maxA.y : minA.y;
+			//	xEnd = deltaX >= 0 ? minB.x : maxB.x;
+			//	yEnd = centerB.y;
+			//}
+
+			BuildCorridor(xStart, yStart, xEnd, yEnd, xFirst);
+		}
+
+		void BuildCorridor(int xStart, int yStart, int xEnd, int yEnd, bool xFirst)
+		{
+			if (xFirst)
 			{
-				if (centerA.x < centerB.x)
+				if (xStart <= xEnd)
 				{
-					//go right x++
-					for (int x = centerA.x; x <= centerB.x; x++)
+					for (int x = xStart; x <= xEnd; x++)
 					{
-						SetTile(x, centerA.y, 2);
-						SetTile(x, centerA.y + 1, 2);
+						PaintCorridor(x, yStart, false);
 					}
 				}
 				else
 				{
-					//go left x--
-					for (int x = centerA.x; x >= centerB.x; x--)
+					for (int x = xStart; x >= xEnd; x--)
 					{
-						SetTile(x, centerA.y, 2);
-						SetTile(x, centerA.y + 1, 2);
+						PaintCorridor(x, yStart, false);
 					}
 				}
 
-				if (centerA.y < centerB.y)
+				if (yStart <= yEnd)
 				{
-					//go up y++
-					for (int y = centerA.y; y <= centerB.y; y++)
+					for (int y = yStart; y <= yEnd; y++)
 					{
-						SetTile(centerB.x, y, 2);
-						SetTile(centerB.x + 1, y, 2);
+						PaintCorridor(xEnd, y, true);
 					}
 				}
 				else
 				{
-					//go down y--
-					for (int y = centerA.y; y >= centerB.y; y--)
+					for (int y = yStart; y >= yEnd; y--)
 					{
-						SetTile(centerB.x, y, 2);
-						SetTile(centerB.x + 1, y, 2);
+						PaintCorridor(xEnd, y, true);
 					}
 				}
 			}
 			else
 			{
-
-				if (centerA.y < centerB.y)
+				if (yStart <= yEnd)
 				{
-					//go up y++
-					for (int y = centerA.y; y <= centerB.y; y++)
+					for (int y = yStart; y <= yEnd; y++)
 					{
-						SetTile(centerA.x, y, 2);
-						SetTile(centerA.x + 1, y, 2);
+						PaintCorridor(xStart, y, true);
 					}
 				}
 				else
 				{
-					//go down y--
-					for (int y = centerA.y; y >= centerB.y; y--)
+					for (int y = yStart; y >= yEnd; y--)
 					{
-						SetTile(centerA.x, y, 2);
-						SetTile(centerA.x + 1, y, 2);
+						PaintCorridor(xStart, y, true);
 					}
 				}
-
-				if (centerA.x < centerB.x)
+				if (xStart <= xEnd)
 				{
-					//go right x++
-					for (int x = centerA.x; x <= centerB.x; x++)
+					for (int x = xStart; x <= xEnd; x++)
 					{
-						SetTile(x, centerB.y, 2);
-						SetTile(x, centerB.y + 1, 2);
+						PaintCorridor(x, yEnd, false);
 					}
 				}
 				else
 				{
-					//go left x--
-					for (int x = centerA.x; x >= centerB.x; x--)
+					for (int x = xStart; x >= xEnd; x--)
 					{
-						SetTile(x, centerB.y, 2);
-						SetTile(x, centerB.y + 1, 2);
+						PaintCorridor(x, yEnd, false);
 					}
+				}
+			}
+		}
+
+		void PaintCorridor(int x, int y, bool addHorizontal)
+		{
+			SetTile(x, y, 2);
+
+			for (int i = -corridorSize / 2; i < corridorSize / 2; i++)
+			{
+				if (addHorizontal)
+				{
+					SetTile(x + i, y, 2);
+
+				}
+				else
+				{
+					SetTile(x, y + i, 2);
 				}
 			}
 		}
@@ -371,44 +407,6 @@ namespace Retroboy
 				}
 			}
 		}
-
-		//private Room FindClosestRoom(int i, bool secondPass = false)
-		//{
-		//	float minDistance = float.MaxValue;
-		//	int minIndex = -1;
-		//	for (int j = 0; j < allRooms.Count; j++)
-		//	{
-		//		if (i == j)
-		//		{
-		//			continue;
-		//		}
-		//		if (!secondPass && allRooms[j].foundClosest)
-		//		{
-		//			continue;
-		//		}
-		//		if (allRooms[i].closestRoom == allRooms[j])
-		//		{
-		//			continue;
-		//		}
-
-		//		float distance = Vector2.Distance(allRooms[i].roomSpace.center, allRooms[j].roomSpace.center);
-		//		if (distance < minDistance)
-		//		{
-		//			minDistance = distance;
-		//			minIndex = j;
-		//		}
-		//	}
-		//	if (minIndex != -1)
-		//	{
-		//		print("closest room to " + i + " is " + minIndex);
-		//		return allRooms[minIndex];
-		//	}
-		//	else
-		//	{
-		//		print("couldnt find closest room");
-		//		return null;
-		//	}
-		//}
 
 		void PrintMap()
 		{
