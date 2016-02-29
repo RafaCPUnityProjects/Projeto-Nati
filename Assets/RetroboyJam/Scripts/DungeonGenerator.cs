@@ -24,7 +24,7 @@ namespace Retroboy
 		public int connectionsPerRoom = 3;
 		public float roomConnectionTreshold = 7f;
 		//corridor stuff
-		public int corridorSize = 2;
+		public int extraCorridor = 2;
 		//print stuff
 		public GameObject[] tilePrefabs;
 		public Transform mapRootGO;
@@ -33,6 +33,7 @@ namespace Retroboy
 		//private stuff
 		private int[,] map;
 		private List<Room> allRooms = new List<Room>();
+		private List<Corridor> allCorridors = new List<Corridor>();
 		private System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 		private int currentRegion = -1;
 
@@ -218,19 +219,27 @@ namespace Retroboy
 			return currentRegion;
 		}
 
-		void SetRoomInMap(Rect newRoom)
+		void SetRoomInMap(Rect newRoom, bool set = true)
 		{
 			for (int y = (int)newRoom.y; y < (int)newRoom.yMax; y++)
 			{
 				for (int x = (int)newRoom.x; x < (int)newRoom.xMax; x++)
 				{
-					int type = 2; //floor
-					if (x < (int)newRoom.x + wallDepth ||
-						x >= (int)newRoom.xMax - wallDepth ||
-						y < (int)newRoom.y + wallDepth ||
-						y >= (int)newRoom.yMax - wallDepth)
+					int type;
+					if (set)
 					{
-						type = 0; //wall
+						type = 2; //floor
+						if (x < (int)newRoom.x + wallDepth ||
+							x >= (int)newRoom.xMax - wallDepth ||
+							y < (int)newRoom.y + wallDepth ||
+							y >= (int)newRoom.yMax - wallDepth)
+						{
+							type = 1; //wall
+						}
+					}
+					else
+					{
+						type = 0; //empty
 					}
 					SetTile(x, y, type);
 				}
@@ -240,9 +249,33 @@ namespace Retroboy
 		void ConnectRooms()
 		{
 			allRooms.Sort();
+			allRooms[0].isMainRoom = true;
+			allRooms[0].ConnectToMainRoom();
 			FindNeighborRooms();
 			Connect();
+			ClearUnconnectedRooms();
+		}
 
+		void ClearUnconnectedRooms()
+		{
+			for (int i = 0; i < allRooms.Count; i++)
+			{
+				if (!allRooms[i].isConnectedToMainRoom)
+				{
+					print("room " + i + " is deleted");
+					SetRoomInMap(allRooms[i].roomSpace, false);
+					allRooms.Remove(allRooms[i]);
+				}
+			}
+			for (int i = 0; i < allCorridors.Count; i++)
+			{
+				if (!allCorridors[i].isConnectedToMainRoom)
+				{
+					print("corridor " + i + " is deleted");
+					allCorridors[i].DeleteCorridor();
+					allCorridors.Remove(allCorridors[i]);
+				}
+			}
 		}
 
 		void Connect()
@@ -256,137 +289,16 @@ namespace Retroboy
 					{
 						if (!allRooms[i].connectedRooms.Contains(allRooms[i].roomDistances[j].room))
 						{
-							ConnectRoomsWithCorridors(allRooms[i], allRooms[i].roomDistances[j].room);
+							Corridor corridor = new Corridor(this, allRooms[i], allRooms[i].roomDistances[j].room);
+							corridor.Connect();
+							allCorridors.Add(corridor);
 						}
 					}
 				}
 			}
 		}
 
-		void ConnectRoomsWithCorridors(Room roomA, Room roomB)
-		{
-			roomA.connectedRooms.Add(roomB);
-			roomB.connectedRooms.Add(roomA);
-
-			VecInt centerA = new VecInt(roomA.roomSpace.center);
-			VecInt centerB = new VecInt(roomB.roomSpace.center);
-			VecInt maxA = new VecInt(roomA.roomSpace.max);
-			VecInt maxB = new VecInt(roomB.roomSpace.max);
-			VecInt minA = new VecInt(roomA.roomSpace.min);
-			VecInt minB = new VecInt(roomB.roomSpace.min);
-
-			float deltaX = roomB.roomSpace.center.x - roomA.roomSpace.center.x;
-			float deltaY = roomB.roomSpace.center.y - roomA.roomSpace.center.y;
-
-			int xStart, yStart, xEnd, yEnd;
-			bool xFirst = Mathf.Abs(deltaX) <= Mathf.Abs(deltaY);
-			xStart = centerA.x;
-			yStart = centerA.y;
-			xEnd = centerB.x;
-			yEnd = centerB.y;
-
-			//if (xFirst)
-			//{
-			//	xStart = deltaX >= 0 ? maxA.x : minA.x;
-			//	yStart = centerA.y;
-			//	xEnd = centerB.x;
-			//	yEnd = deltaY >= 0 ? minB.y : maxB.y;
-			//}
-			//else
-			//{
-			//	xStart = centerA.x;
-			//	yStart = deltaY >= 0 ? maxA.y : minA.y;
-			//	xEnd = deltaX >= 0 ? minB.x : maxB.x;
-			//	yEnd = centerB.y;
-			//}
-
-			BuildCorridor(xStart, yStart, xEnd, yEnd, xFirst);
-		}
-
-		void BuildCorridor(int xStart, int yStart, int xEnd, int yEnd, bool xFirst)
-		{
-			if (xFirst)
-			{
-				if (xStart <= xEnd)
-				{
-					for (int x = xStart; x <= xEnd; x++)
-					{
-						PaintCorridor(x, yStart, false);
-					}
-				}
-				else
-				{
-					for (int x = xStart; x >= xEnd; x--)
-					{
-						PaintCorridor(x, yStart, false);
-					}
-				}
-
-				if (yStart <= yEnd)
-				{
-					for (int y = yStart; y <= yEnd; y++)
-					{
-						PaintCorridor(xEnd, y, true);
-					}
-				}
-				else
-				{
-					for (int y = yStart; y >= yEnd; y--)
-					{
-						PaintCorridor(xEnd, y, true);
-					}
-				}
-			}
-			else
-			{
-				if (yStart <= yEnd)
-				{
-					for (int y = yStart; y <= yEnd; y++)
-					{
-						PaintCorridor(xStart, y, true);
-					}
-				}
-				else
-				{
-					for (int y = yStart; y >= yEnd; y--)
-					{
-						PaintCorridor(xStart, y, true);
-					}
-				}
-				if (xStart <= xEnd)
-				{
-					for (int x = xStart; x <= xEnd; x++)
-					{
-						PaintCorridor(x, yEnd, false);
-					}
-				}
-				else
-				{
-					for (int x = xStart; x >= xEnd; x--)
-					{
-						PaintCorridor(x, yEnd, false);
-					}
-				}
-			}
-		}
-
-		void PaintCorridor(int x, int y, bool addHorizontal)
-		{
-			SetTile(x, y, 2);
-
-			for (int i = -corridorSize / 2; i < corridorSize / 2; i++)
-			{
-				if (addHorizontal)
-				{
-					SetTile(x + i, y, 2);
-
-				}
-				else
-				{
-					SetTile(x, y + i, 2);
-				}
-			}
-		}
+		
 
 		bool InBoundaries(VecInt pos)
 		{
@@ -433,28 +345,174 @@ namespace Retroboy
 			}
 		}
 
-		void SetTile(VecInt pos, int type)
+		public void SetTile(VecInt pos, int type)
 		{
 			SetTile(pos.x, pos.y, type);
 		}
 
-		void SetTile(int posX, int posY, int type)
+		public void SetTile(int posX, int posY, int type)
 		{
 			map[posX, posY] = type;
 		}
 
-		int GetTile(VecInt pos)
+		public int GetTile(VecInt pos)
 		{
 			return GetTile(pos.x, pos.y);
 		}
 
-		int GetTile(int posX, int posY)
+		public int GetTile(int posX, int posY)
 		{
 			return map[posX, posY];
 		}
 	}
 
-	struct RoomDistance : IComparable<RoomDistance>
+	public class Corridor
+	{
+		public List<VecInt> tiles = new List<VecInt>();
+		public Room roomA;
+		public Room roomB;
+		public bool isConnectedToMainRoom = false;
+		public DungeonGenerator dg;
+
+		public Corridor(DungeonGenerator dg, Room roomA, Room roomB)
+		{
+			this.dg = dg;
+			this.roomA = roomA;
+			this.roomB = roomB;
+		}
+
+		public void Connect()
+		{
+			roomA.connectedCorridors.Add(this);
+			roomB.connectedCorridors.Add(this);
+			if (roomA.isConnectedToMainRoom || roomB.isConnectedToMainRoom)
+			{
+				roomA.ConnectToMainRoom();
+				roomB.ConnectToMainRoom();
+				isConnectedToMainRoom = true;
+			}
+
+			roomA.connectedRooms.Add(roomB);
+			roomB.connectedRooms.Add(roomA);
+
+			VecInt centerA = new VecInt(roomA.roomSpace.center);
+			VecInt centerB = new VecInt(roomB.roomSpace.center);
+
+			float deltaX = roomB.roomSpace.center.x - roomA.roomSpace.center.x;
+			float deltaY = roomB.roomSpace.center.y - roomA.roomSpace.center.y;
+
+			bool xFirst = Mathf.Abs(deltaX) <= Mathf.Abs(deltaY);
+
+			if (xFirst)
+			{
+				if (centerA.x <= centerB.x)
+				{
+					for (int x = centerA.x; x <= centerB.x; x++)
+					{
+						PaintCorridor(x, centerA.y, false);
+					}
+				}
+				else
+				{
+					for (int x = centerA.x; x >= centerB.x; x--)
+					{
+						PaintCorridor(x, centerA.y, false);
+					}
+				}
+
+				if (centerA.y <= centerB.y)
+				{
+					for (int y = centerA.y; y <= centerB.y; y++)
+					{
+						PaintCorridor(centerB.x, y, true);
+					}
+				}
+				else
+				{
+					for (int y = centerA.y; y >= centerB.y; y--)
+					{
+						PaintCorridor(centerB.x, y, true);
+					}
+				}
+			}
+			else
+			{
+				if (centerA.y <= centerB.y)
+				{
+					for (int y = centerA.y; y <= centerB.y; y++)
+					{
+						PaintCorridor(centerA.x, y, true);
+					}
+				}
+				else
+				{
+					for (int y = centerA.y; y >= centerB.y; y--)
+					{
+						PaintCorridor(centerA.x, y, true);
+					}
+				}
+				if (centerA.x <= centerB.x)
+				{
+					for (int x = centerA.x; x <= centerB.x; x++)
+					{
+						PaintCorridor(x, centerB.y, false);
+					}
+				}
+				else
+				{
+					for (int x = centerA.x; x >= centerB.x; x--)
+					{
+						PaintCorridor(x, centerB.y, false);
+					}
+				}
+			}
+		}
+
+		void PaintCorridor(int x, int y, bool addHorizontal)
+		{
+			dg.SetTile(x, y, 2);
+
+			for (int i = -(dg.extraCorridor + dg.wallDepth); i <= (dg.extraCorridor + dg.wallDepth); i++)
+			{
+				if (addHorizontal)
+				{
+					int type = 2;
+					if (i < -dg.extraCorridor || i > dg.extraCorridor) //corridor wall
+					{
+						type = 1;
+					}
+					if (dg.GetTile(x + i, y) != 2) //dont paint over floors
+					{
+						dg.SetTile(x + i, y, type);
+						tiles.Add(new VecInt(x+i, y));
+					}
+				}
+				else
+				{
+					int type = 2;
+					if (i < -dg.extraCorridor || i > dg.extraCorridor) //corridor wall
+					{
+						type = 1;
+					}
+					if (dg.GetTile(x, y + i) != 2) //dont paint over floors
+					{
+						dg.SetTile(x, y + i, type);
+						tiles.Add(new VecInt(x, y+i));
+					}
+				}
+			}
+		}
+
+		public void DeleteCorridor()
+		{
+			foreach (var tile in tiles)
+			{
+				dg.SetTile(tile, 0);
+			}
+		}
+	}
+
+	public struct RoomDistance : IComparable<RoomDistance>
 	{
 		public Room room;
 		public float distance;
@@ -471,38 +529,61 @@ namespace Retroboy
 		}
 	}
 
-	class Room : IComparable<Room>
+	public class Room : IComparable<Room>
 	{
 		public Rect roomSpace;
 		public List<Room> connectedRooms = new List<Room>();
 		public List<RoomDistance> roomDistances = new List<RoomDistance>();
-		public bool foundClosest = false;
-		public int region;
+		public bool isMainRoom = false;
+		public bool isConnectedToMainRoom = false;
 		public bool hasBeenConnected = false;
 
 		public Color color = new Color();
+		public List<Corridor> connectedCorridors = new List<Corridor>();
 
 		public Room() { }
 
 		public Room(Rect roomSpace, int region)
 		{
 			this.roomSpace = roomSpace;
-			this.region = region;
 			color = new Color(
 					UnityEngine.Random.Range(0f, 1f),
 					UnityEngine.Random.Range(0f, 1f),
 					UnityEngine.Random.Range(0f, 1f));
 		}
 
+		public void ConnectToMainRoom()
+		{
+			isConnectedToMainRoom = true;
+			foreach (var room in connectedRooms)
+			{
+				if (!room.isConnectedToMainRoom)
+				{
+					room.isConnectedToMainRoom = true;
+					room.ConnectToMainRoom();
+				}
+			}
+			foreach (var corridor in connectedCorridors)
+			{
+				if (!corridor.isConnectedToMainRoom)
+				{
+					corridor.isConnectedToMainRoom = true;
+				}
+			}
+		}
+
 		public void Connect(Room other)
 		{
 			hasBeenConnected = true;
 			other.hasBeenConnected = true;
-			for (int i = 0; i < connectedRooms.Count; i++)
+			if (other.isConnectedToMainRoom)
 			{
-				connectedRooms[i].region = other.region;
+				isConnectedToMainRoom = true;
+				for (int i = 0; i < connectedRooms.Count; i++)
+				{
+					connectedRooms[i].isConnectedToMainRoom = true;
+				}
 			}
-			region = other.region;
 			connectedRooms.Add(other);
 		}
 
